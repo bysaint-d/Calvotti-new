@@ -1,10 +1,813 @@
-<Application x:Class="StoreManagement.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="clr-namespace:StoreManagement.ViewModels" xmlns:helpers="clr-namespace:StoreManagement.Helpers"><Application.Resources>
-<Style TargetType="Button"><Setter Property="Padding" Value="12,7"/><Setter Property="Margin" Value="4"/><Setter Property="Background" Value="#2563EB"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderThickness" Value="0"/></Style><Style TargetType="TextBox"><Setter Property="Margin" Value="4"/><Setter Property="Padding" Value="7"/></Style><Style TargetType="DataGrid"><Setter Property="Margin" Value="8"/><Setter Property="AutoGenerateColumns" Value="False"/><Setter Property="IsReadOnly" Value="True"/></Style>
-<DataTemplate DataType="{x:Type vm:DashboardVm}"><StackPanel><TextBlock Text="Dashboard" FontSize="28"/><UniformGrid Columns="3"><TextBlock Text="{Binding TodaySales,StringFormat=Bugünkü satış: {0:N2} ₼}" Margin="10" FontSize="20"/><TextBlock Text="{Binding TodayProfit,StringFormat=Bugünkü mənfəət: {0:N2} ₼}" Margin="10" FontSize="20"/><TextBlock Text="{Binding MonthSales,StringFormat=Bu ayın satışı: {0:N2} ₼}" Margin="10" FontSize="20"/></UniformGrid><DataGrid ItemsSource="{Binding Critical}"><DataGrid.Columns><DataGridTextColumn Header="Kritik məhsul" Binding="{Binding Name}"/><DataGridTextColumn Header="Stok" Binding="{Binding StockQuantity}"/></DataGrid.Columns></DataGrid></StackPanel></DataTemplate>
-<DataTemplate DataType="{x:Type vm:ProductsVm}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="370"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Mallar" FontSize="28" FontWeight="Bold"/><StackPanel Orientation="Horizontal"><TextBox Text="{Binding Search,UpdateSourceTrigger=PropertyChanged}" Width="270" ToolTip="Məhsul adı, barkod və kateqoriya üzrə axtar"/><TextBox Text="{Binding BarcodeInput,UpdateSourceTrigger=PropertyChanged}" helpers:BarcodeEnterBehavior.Command="{Binding ScanCommand}" Width="180" ToolTip="USB barkod skanerini buraya oxudun"/><Button Content="Barkodu yoxla" Command="{Binding ScanCommand}"/></StackPanel><DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}"><DataGrid.Columns><DataGridTextColumn Header="ID" Binding="{Binding Id}"/><DataGridTextColumn Header="Barkod" Binding="{Binding Barcode}"/><DataGridTextColumn Header="Məhsul adı" Binding="{Binding Name}"/><DataGridTextColumn Header="Kateqoriya" Binding="{Binding Category}"/><DataGridTextColumn Header="Alış" Binding="{Binding PurchasePrice,StringFormat={}{0:N2} ₼}"/><DataGridTextColumn Header="Satış" Binding="{Binding SalePrice,StringFormat={}{0:N2} ₼}"/><DataGridTextColumn Header="Stok" Binding="{Binding StockQuantity}"/><DataGridTextColumn Header="Minimum" Binding="{Binding MinimumStock}"/></DataGrid.Columns></DataGrid></StackPanel><ScrollViewer Grid.Column="1"><StackPanel><Border Background="White" Padding="14" Margin="5"><StackPanel><TextBlock Text="Məhsul əlavə et / redaktə et" FontSize="20" FontWeight="Bold"/><TextBlock Text="Məhsul adı"/><TextBox Text="{Binding Form.Name}"/><TextBlock Text="Barkod (məcburi deyil)"/><TextBox Text="{Binding Form.Barcode}"/><TextBlock Text="Kateqoriya"/><TextBox Text="{Binding Form.Category}"/><TextBlock Text="Alış qiyməti"/><TextBox Text="{Binding Form.PurchasePrice}"/><TextBlock Text="Satış qiyməti"/><TextBox Text="{Binding Form.SalePrice}"/><TextBlock Text="İlkin / cari miqdar"/><TextBox Text="{Binding Form.StockQuantity}"/><TextBlock Text="Minimum stok"/><TextBox Text="{Binding Form.MinimumStock}"/><TextBlock Text="Təchizatçı"/><TextBox Text="{Binding Form.Supplier}"/><TextBlock Text="Qeyd"/><TextBox Text="{Binding Form.Notes}"/><Button Content="Yeni məhsul" Command="{Binding NewCommand}"/><Button Content="Yadda saxla" Command="{Binding SaveCommand}"/><Button Content="Seçilmiş məhsulu sil" Background="#DC2626" Command="{Binding DeleteCommand}"/></StackPanel></Border><Border Background="#EFF6FF" Padding="14" Margin="5"><StackPanel><TextBlock Text="Stok düzəlişi" FontSize="18"/><TextBlock Text="Müsbət rəqəm stoku artırır, mənfi rəqəm azaldır." TextWrapping="Wrap"/><TextBox Text="{Binding Adjustment}" ToolTip="Düzəliş miqdarı"/><TextBox Text="{Binding AdjustmentNote}" ToolTip="Səbəb"/><Button Content="Stoku yenilə" Command="{Binding AdjustCommand}"/></StackPanel></Border></StackPanel></ScrollViewer></Grid></DataTemplate>
-<DataTemplate DataType="{x:Type vm:SalesVm}"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel><TextBlock Text="Satış" FontSize="28" FontWeight="Bold"/><TextBlock Text="USB skaner klaviatura kimi işləyir: aşağıdakı sahəyə oxudun, Enter avtomatik əlavə edir." Foreground="#475569"/><StackPanel Orientation="Horizontal"><TextBox Text="{Binding Barcode,UpdateSourceTrigger=PropertyChanged}" helpers:BarcodeEnterBehavior.Command="{Binding ScanCommand}" Width="360" ToolTip="Barkod"/><Button Content="Əlavə et" Command="{Binding ScanCommand}"/></StackPanel></StackPanel><StackPanel Grid.Row="1" Orientation="Horizontal"><TextBox Text="{Binding Search,UpdateSourceTrigger=PropertyChanged}" Width="300" ToolTip="Məhsul axtar"/><ComboBox ItemsSource="{Binding AvailableProducts}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name" Width="280" Margin="4"/><Button Content="Seçilmiş məhsulu əlavə et" Command="{Binding AddSelectedCommand}"/></StackPanel><DataGrid Grid.Row="2" ItemsSource="{Binding Cart}"><DataGrid.Columns><DataGridTextColumn Header="Məhsul" Binding="{Binding Product.Name}"/><DataGridTemplateColumn Header="Say"><DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel Orientation="Horizontal"><Button Content="−" Command="{Binding DataContext.DecreaseCommand,RelativeSource={RelativeSource AncestorType=ContentControl}}" CommandParameter="{Binding}"/><TextBox Text="{Binding Quantity,UpdateSourceTrigger=PropertyChanged}" Width="45"/><Button Content="+" Command="{Binding DataContext.IncreaseCommand,RelativeSource={RelativeSource AncestorType=ContentControl}}" CommandParameter="{Binding}"/></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn><DataGridTextColumn Header="Qiymət" Binding="{Binding Product.SalePrice,StringFormat={}{0:N2} ₼}"/><DataGridTextColumn Header="Cəmi" Binding="{Binding Total,StringFormat={}{0:N2} ₼}"/><DataGridTemplateColumn Header="Sil"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Sil" Command="{Binding DataContext.RemoveCommand,RelativeSource={RelativeSource AncestorType=ContentControl}}" CommandParameter="{Binding}"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn></DataGrid.Columns></DataGrid><Border Grid.Row="3" Background="White" Padding="12"><WrapPanel><TextBlock Text="Ara cəm: "/><TextBlock Text="{Binding Subtotal,StringFormat={}{0:N2} ₼}"/><TextBlock Text="Endirim:" Margin="15,0,0,0"/><TextBox Text="{Binding Discount,UpdateSourceTrigger=PropertyChanged}" Width="80"/><TextBlock Text="Ödənilən:"/><TextBox Text="{Binding Paid,UpdateSourceTrigger=PropertyChanged}" Width="80"/><TextBlock Text="Ümumi:" Margin="15,0,0,0"/><TextBlock Text="{Binding Total,StringFormat={}{0:N2} ₼}"/><TextBlock Text="Qalıq:" Margin="15,0,0,0"/><TextBlock Text="{Binding Change,StringFormat={}{0:N2} ₼}"/><Button Content="Satışı tamamla" Command="{Binding CompleteCommand}"/></WrapPanel></Border></Grid></DataTemplate>
-<DataTemplate DataType="{x:Type vm:PurchaseVm}"><StackPanel><TextBlock Text="Alış" FontSize="28"/><ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name"/><TextBox Text="{Binding Quantity}"/><TextBox Text="{Binding Price}"/><Button Content="Alışı yadda saxla" Command="{Binding SaveCommand}"/></StackPanel></DataTemplate>
-<DataTemplate DataType="{x:Type vm:FinanceVm}"><StackPanel><TextBlock Text="Gəlir / Xərc" FontSize="28"/><DataGrid ItemsSource="{Binding Expenses}"><DataGrid.Columns><DataGridTextColumn Header="Xərc" Binding="{Binding Description}"/><DataGridTextColumn Header="Məbləğ" Binding="{Binding Amount}"/></DataGrid.Columns></DataGrid><TextBox Text="{Binding Form.Description}" ToolTip="Xərc adı"/><TextBox Text="{Binding Form.Amount}" ToolTip="Məbləğ"/><Button Content="Xərc əlavə et" Command="{Binding SaveCommand}"/></StackPanel></DataTemplate>
-<DataTemplate DataType="{x:Type vm:ReportsVm}"><ScrollViewer><StackPanel><TextBlock Text="Hesabatlar" FontSize="28" FontWeight="Bold"/><WrapPanel><Button Content="Bugün" Command="{Binding PeriodCommand}" CommandParameter="Bugün"/><Button Content="Dünən" Command="{Binding PeriodCommand}" CommandParameter="Dünən"/><Button Content="Bu həftə" Command="{Binding PeriodCommand}" CommandParameter="Bu həftə"/><Button Content="Bu ay" Command="{Binding PeriodCommand}" CommandParameter="Bu ay"/><Button Content="Keçən ay" Command="{Binding PeriodCommand}" CommandParameter="Keçən ay"/><DatePicker SelectedDate="{Binding From}"/><DatePicker SelectedDate="{Binding To}"/><Button Content="Xüsusi tarixi yenilə" Command="{Binding RefreshCommand}"/></WrapPanel><UniformGrid Columns="3"><TextBlock Text="{Binding Sales,StringFormat=Ümumi satış: {0:N2} ₼}" Margin="10" FontSize="18"/><TextBlock Text="{Binding Purchases,StringFormat=Ümumi alış: {0:N2} ₼}" Margin="10" FontSize="18"/><TextBlock Text="{Binding CostOfGoods,StringFormat=Satışın maya dəyəri: {0:N2} ₼}" Margin="10" FontSize="18"/><TextBlock Text="{Binding Gross,StringFormat=Brüt mənfəət: {0:N2} ₼}" Margin="10" FontSize="18"/><TextBlock Text="{Binding Expenses,StringFormat=Digər xərclər: {0:N2} ₼}" Margin="10" FontSize="18"/><TextBlock Text="{Binding Net,StringFormat=Xalis mənfəət: {0:N2} ₼}" Margin="10" FontSize="18"/><TextBlock Text="{Binding SaleCount,StringFormat=Satış sayı: {0}}" Margin="10"/><TextBlock Text="{Binding ProductsSold,StringFormat=Satılan məhsul sayı: {0}}" Margin="10"/></UniformGrid><TextBlock Text="Ən çox satılan məhsullar" FontSize="20"/><DataGrid ItemsSource="{Binding BestSellers}"><DataGrid.Columns><DataGridTextColumn Header="Məhsul" Binding="{Binding Name}"/><DataGridTextColumn Header="Say" Binding="{Binding Quantity}"/><DataGridTextColumn Header="Satış" Binding="{Binding Amount,StringFormat={}{0:N2} ₼}"/></DataGrid.Columns></DataGrid><TextBlock Text="Ən gəlirli məhsullar" FontSize="20"/><DataGrid ItemsSource="{Binding ProfitableProducts}"><DataGrid.Columns><DataGridTextColumn Header="Məhsul" Binding="{Binding Name}"/><DataGridTextColumn Header="Say" Binding="{Binding Quantity}"/><DataGridTextColumn Header="Mənfəət" Binding="{Binding Amount,StringFormat={}{0:N2} ₼}"/></DataGrid.Columns></DataGrid><TextBlock Text="{Binding ProductCount,StringFormat=Ümumi məhsul: {0}}"/><TextBlock Text="{Binding StockQuantity,StringFormat=Ümumi stok miqdarı: {0}}"/><TextBlock Text="{Binding LowStock,StringFormat=Kritik stok: {0}}"/><TextBlock Text="{Binding OutOfStock,StringFormat=Stokda yoxdur: {0}}"/></StackPanel></ScrollViewer></DataTemplate>
-<DataTemplate DataType="{x:Type vm:SettingsVm}"><StackPanel><TextBlock Text="Ayarlar" FontSize="28" FontWeight="Bold"/><TextBlock Text="Mağaza adı"/><TextBox Text="{Binding StoreName}" Width="380"/><CheckBox Content="Mənfi stoka icazə ver" IsChecked="{Binding AllowNegativeStock}" Margin="5"/><Button Content="Ayarları yadda saxla" Command="{Binding SaveCommand}"/><TextBlock Text="Verilənlər bazası yolu" Margin="5,20,5,0"/><TextBox Text="{Binding DatabasePath}" IsReadOnly="True" Width="600"/><TextBlock Text="Backup üçün bu bazanın surəti yaradılır."/><Button Content="Database backup" Command="{Binding BackupCommand}"/><Button Content="Backup restore" Background="#DC2626" Command="{Binding RestoreCommand}"/></StackPanel></DataTemplate>
-</Application.Resources></Application>
+<Application x:Class="StoreManagement.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:StoreManagement.ViewModels"
+             xmlns:helpers="clr-namespace:StoreManagement.Helpers">
+    <Application.Resources>
+        <!-- Modern Colors -->
+        <SolidColorBrush x:Key="PrimaryBlue" Color="#2563EB"/>
+        <SolidColorBrush x:Key="PrimaryBlueHover" Color="#1D4ED8"/>
+        <SolidColorBrush x:Key="SuccessGreen" Color="#10B981"/>
+        <SolidColorBrush x:Key="DangerRed" Color="#EF4444"/>
+        <SolidColorBrush x:Key="CardBackground" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="CardBorderBrush" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="DarkSlate" Color="#0F172A"/>
+
+        <!-- Navigation Button Style -->
+        <Style x:Key="NavButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="14,11"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#2563EB"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Quick Nav Top Button Style -->
+        <Style x:Key="QuickNavButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#EFF6FF"/>
+            <Setter Property="Foreground" Value="#1D4ED8"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#BFDBFE"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#DBEAFE"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Primary Action Button Style -->
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="16,9"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="btnBorder" Background="{TemplateBinding Background}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="btnBorder" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="btnBorder" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Input TextBox -->
+        <Style TargetType="TextBox">
+            <Setter Property="Margin" Value="0,4,0,10"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="#2563EB"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern ComboBox -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Margin" Value="0,4,0,10"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <!-- Clean Modern DataGrid Style -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#F1F5F9"/>
+            <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="RowHeight" Value="38"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="Foreground" Value="#475569"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ================= PAGE TEMPLATES ================= -->
+
+        <!-- 1. DASHBOARD VIEW -->
+        <DataTemplate DataType="{x:Type vm:DashboardVm}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,10,0">
+                    <TextBlock Text="İcmal və Statistika" FontSize="22" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,4"/>
+                    <TextBlock Text="Bugünkü satışlar, ümumi gəlir və kritik stok xəbərdarlıqları" FontSize="13" Foreground="#64748B" Margin="0,0,0,18"/>
+
+                    <!-- KPI Cards Grid -->
+                    <UniformGrid Columns="4" Margin="0,0,0,20">
+                        <!-- Card 1 -->
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="18" Margin="0,0,12,0">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <Border Width="38" Height="38" CornerRadius="8" Background="#EFF6FF" HorizontalAlignment="Left">
+                                        <TextBlock Text="🛒" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Bugün" Foreground="#10B981" FontWeight="Bold" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock Text="Bugünkü Satış" FontSize="12" Foreground="#64748B" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding TodaySales, StringFormat={}{0:N2} ₼}" FontSize="22" FontWeight="Bold" Foreground="#0F172A" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 2 -->
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="18" Margin="0,0,12,0">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <Border Width="38" Height="38" CornerRadius="8" Background="#ECFDF5" HorizontalAlignment="Left">
+                                        <TextBlock Text="📈" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Mənfəət" Foreground="#10B981" FontWeight="Bold" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock Text="Bugünkü Mənfəət" FontSize="12" Foreground="#64748B" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding TodayProfit, StringFormat={}{0:N2} ₼}" FontSize="22" FontWeight="Bold" Foreground="#10B981" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 3 -->
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="18" Margin="0,0,12,0">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <Border Width="38" Height="38" CornerRadius="8" Background="#F5F3FF" HorizontalAlignment="Left">
+                                        <TextBlock Text="📅" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Bu Ay" Foreground="#8B5CF6" FontWeight="Bold" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock Text="Bu Ayın Satışı" FontSize="12" Foreground="#64748B" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding MonthSales, StringFormat={}{0:N2} ₼}" FontSize="22" FontWeight="Bold" Foreground="#0F172A" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 4 -->
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="18">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <Border Width="38" Height="38" CornerRadius="8" Background="#FEF2F2" HorizontalAlignment="Left">
+                                        <TextBlock Text="⚠️" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Xəbərdarlıq" Foreground="#EF4444" FontWeight="Bold" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock Text="Kritik Stok Sayı" FontSize="12" Foreground="#64748B" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding LowStockCount}" FontSize="22" FontWeight="Bold" Foreground="#EF4444" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- Critical Stock Section -->
+                    <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="20">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="⚠️  Kritik və Bitən Stok Məhsulları" FontSize="16" FontWeight="Bold" Foreground="#0F172A"/>
+                                    <Border Background="#FEF2F2" CornerRadius="10" Padding="8,2" Margin="10,0,0,0">
+                                        <TextBlock Text="{Binding LowStockCount, StringFormat={}{0} Məhsul}" FontSize="11" FontWeight="Bold" Foreground="#DC2626"/>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                            <DataGrid ItemsSource="{Binding Critical}" MaxHeight="320">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Məhsul Adı" Binding="{Binding Name}" Width="*"/>
+                                    <DataGridTextColumn Header="Barkod" Binding="{Binding Barcode}" Width="150"/>
+                                    <DataGridTextColumn Header="Kateqoriya" Binding="{Binding Category}" Width="150"/>
+                                    <DataGridTextColumn Header="Satış Qiyməti" Binding="{Binding SalePrice, StringFormat={}{0:N2} ₼}" Width="120"/>
+                                    <DataGridTextColumn Header="Cari Stok" Binding="{Binding StockQuantity}" Width="100"/>
+                                    <DataGridTextColumn Header="Minimum Hədd" Binding="{Binding MinimumStock}" Width="120"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+
+        <!-- 2. PRODUCTS (MALLAR VƏ ANBAR) VIEW -->
+        <DataTemplate DataType="{x:Type vm:ProductsVm}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="380"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Side: Table & Search -->
+                <Grid Grid.Column="0" Margin="0,0,16,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                        <TextBlock Text="Mallar və Anbar İdarəetməsi" FontSize="22" FontWeight="Bold" Foreground="#0F172A"/>
+                        <TextBlock Text="Məhsul bazası, qiymətlər, barkodlar və anbar qalıqları" FontSize="13" Foreground="#64748B"/>
+                    </StackPanel>
+
+                    <!-- Search and Barcode Quick Scan Filter -->
+                    <Border Grid.Row="1" Background="White" CornerRadius="10" BorderBrush="#E2E8F0" BorderThickness="1" Padding="14" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,10,0">
+                                <TextBlock Text="Məhsul axtarışı (Ad və ya kateqoriya)" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Margin="0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                <TextBlock Text="Barkod Skaneri" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding BarcodeInput, UpdateSourceTrigger=PropertyChanged}" helpers:BarcodeEnterBehavior.Command="{Binding ScanCommand}" Margin="0"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="🔍 Yoxla" Command="{Binding ScanCommand}" VerticalAlignment="Bottom" Margin="0,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Products DataGrid -->
+                    <DataGrid Grid.Row="2" ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
+                            <DataGridTextColumn Header="Barkod" Binding="{Binding Barcode}" Width="120"/>
+                            <DataGridTextColumn Header="Məhsul Adı" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="Kateqoriya" Binding="{Binding Category}" Width="110"/>
+                            <DataGridTextColumn Header="Alış" Binding="{Binding PurchasePrice, StringFormat={}{0:N2} ₼}" Width="85"/>
+                            <DataGridTextColumn Header="Satış" Binding="{Binding SalePrice, StringFormat={}{0:N2} ₼}" Width="85"/>
+                            <DataGridTextColumn Header="Stok" Binding="{Binding StockQuantity}" Width="70"/>
+                            <DataGridTextColumn Header="Min." Binding="{Binding MinimumStock}" Width="60"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- Right Side: Edit / Add Form & Stock Adjustment -->
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Form Card -->
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="18" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Məhsul Qeydiyyatı" FontSize="16" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="Məhsul Adı *" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                <TextBox Text="{Binding Form.Name}"/>
+
+                                <TextBlock Text="Barkod" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                <TextBox Text="{Binding Form.Barcode}"/>
+
+                                <TextBlock Text="Kateqoriya" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                <TextBox Text="{Binding Form.Category}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="Alış Qiyməti (₼)" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                        <TextBox Text="{Binding Form.PurchasePrice}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                        <TextBlock Text="Satış Qiyməti (₼)" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                        <TextBox Text="{Binding Form.SalePrice}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="Cari Miqdar" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                        <TextBox Text="{Binding Form.StockQuantity}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                        <TextBlock Text="Min. Stok Həddi" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                        <TextBox Text="{Binding Form.MinimumStock}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Text="Təchizatçı / Şirkət" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                <TextBox Text="{Binding Form.Supplier}"/>
+
+                                <TextBlock Text="Qeyd" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                <TextBox Text="{Binding Form.Notes}"/>
+
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Content="✨ Yeni Məhsul" Command="{Binding NewCommand}" Background="#64748B" Margin="0,0,4,0"/>
+                                    <Button Grid.Column="1" Content="💾 Yadda Saxla" Command="{Binding SaveCommand}" Background="#2563EB" Margin="4,0,0,0"/>
+                                </Grid>
+
+                                <Button Content="🗑️ Seçilmiş Məhsulu Sil" Command="{Binding DeleteCommand}" Background="#EF4444" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Quick Stock Adjustment Card -->
+                        <Border Background="#F8FAFC" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="18">
+                            <StackPanel>
+                                <TextBlock Text="⚡ Sürətli Stok Düzəlişi" FontSize="14" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,4"/>
+                                <TextBlock Text="Artırmaq üçün + miqdar, azaltmaq üçün - miqdar yazın." FontSize="11" Foreground="#64748B" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding Adjustment}" ToolTip="Düzəliş miqdarı (məs: +10 və ya -5)"/>
+                                <TextBox Text="{Binding AdjustmentNote}" ToolTip="Düzəliş səbəbi / qeyd"/>
+                                <Button Content="🔄 Stoku Yenilə" Command="{Binding AdjustCommand}" Background="#0284C7" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </DataTemplate>
+
+        <!-- 3. POS SALES (SATIŞ) VIEW -->
+        <DataTemplate DataType="{x:Type vm:SalesVm}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="420"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Side: USB Barcode & Product Catalog Selection -->
+                <Grid Grid.Column="0" Margin="0,0,16,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Barcode Scanner Focus Area -->
+                    <Border Grid.Row="0" Background="#1E293B" CornerRadius="10" Padding="16" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="38" Height="38" CornerRadius="8" Background="#334155" Margin="0,0,12,0">
+                                <TextBlock Text="📷" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="USB Barkod Oxuyucu (Avtomatik Səbətə Əlavə)" Foreground="#94A3B8" FontSize="11" FontWeight="SemiBold"/>
+                                <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" helpers:BarcodeEnterBehavior.Command="{Binding ScanCommand}" Margin="0,4,0,0" Background="#0F172A" Foreground="White" BorderBrush="#334155" FontSize="15" FontWeight="Bold"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="Skan Et" Command="{Binding ScanCommand}" Background="#2563EB" VerticalAlignment="Bottom" Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Product Search & Quick Picker -->
+                    <Border Grid.Row="1" Background="White" CornerRadius="10" BorderBrush="#E2E8F0" BorderThickness="1" Padding="14" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Text="Ada görə axtarış" FontSize="11" FontWeight="SemiBold" Foreground="#64748B"/>
+                                <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="8,0,8,0">
+                                <TextBlock Text="Məhsul siyahısı" FontSize="11" FontWeight="SemiBold" Foreground="#64748B"/>
+                                <ComboBox ItemsSource="{Binding AvailableProducts}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="➕ Səbətə At" Command="{Binding AddSelectedCommand}" Background="#10B981" VerticalAlignment="Bottom" Margin="0,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Available Catalog List -->
+                    <Border Grid.Row="2" Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="14">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Mövcud Məhsullar Kataloqu" FontSize="13" FontWeight="Bold" Foreground="#475569" Margin="0,0,0,10"/>
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding AvailableProducts}" SelectedItem="{Binding SelectedProduct}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Barkod" Binding="{Binding Barcode}" Width="120"/>
+                                    <DataGridTextColumn Header="Məhsul Adı" Binding="{Binding Name}" Width="*"/>
+                                    <DataGridTextColumn Header="Kateqoriya" Binding="{Binding Category}" Width="120"/>
+                                    <DataGridTextColumn Header="Qiymət" Binding="{Binding SalePrice, StringFormat={}{0:N2} ₼}" Width="100"/>
+                                    <DataGridTextColumn Header="Qalıq Stok" Binding="{Binding StockQuantity}" Width="90"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- Right Side: POS Səbət & Ödəniş Terminalı -->
+                <Border Grid.Column="1" Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="18">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Cart Header -->
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="🛒  Kassa Səbəti" FontSize="17" FontWeight="Bold" Foreground="#0F172A"/>
+                                <Border Background="#DBEAFE" CornerRadius="10" Padding="8,2" Margin="10,0,0,0">
+                                    <TextBlock Text="{Binding Cart.Count, StringFormat={}{0} Növ}" FontSize="11" FontWeight="Bold" Foreground="#1D4ED8"/>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Cart Items DataGrid -->
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding Cart}" Margin="0,0,0,14">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Məhsul" Binding="{Binding Product.Name}" Width="*"/>
+                                <DataGridTemplateColumn Header="Miqdar" Width="105">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Button Content="−" Command="{Binding DataContext.DecreaseCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Width="26" Height="26" Padding="0" Margin="0,0,4,0" Background="#E2E8F0" Foreground="#0F172A"/>
+                                                <TextBlock Text="{Binding Quantity}" VerticalAlignment="Center" FontWeight="Bold" Width="26" TextAlignment="Center"/>
+                                                <Button Content="+" Command="{Binding DataContext.IncreaseCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Width="26" Height="26" Padding="0" Margin="4,0,0,0" Background="#E2E8F0" Foreground="#0F172A"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Qiymət" Binding="{Binding Product.SalePrice, StringFormat={}{0:N2} ₼}" Width="65"/>
+                                <DataGridTextColumn Header="Cəmi" Binding="{Binding Total, StringFormat={}{0:N2} ₼}" Width="70"/>
+                                <DataGridTemplateColumn Width="40">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="✕" Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Width="24" Height="24" Padding="0" Background="#FEE2E2" Foreground="#DC2626"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- Cart Calculations & Payment Area -->
+                        <Border Grid.Row="2" Background="#F8FAFC" CornerRadius="10" BorderBrush="#E2E8F0" BorderThickness="1" Padding="14">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Ara Cəm:" FontSize="13" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding Subtotal, StringFormat={}{0:N2} ₼}" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Endirim (₼):" FontSize="13" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding Discount, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Margin="0" TextAlignment="Right"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,8">
+                                    <TextBlock Text="Ödəniş Növü:" FontSize="13" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <ComboBox SelectedValue="{Binding PaymentMethod, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" Width="120" Margin="0">
+                                            <ComboBoxItem Content="Nağd" IsSelected="True"/>
+                                            <ComboBoxItem Content="Kart"/>
+                                            <ComboBoxItem Content="Borc"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Customer name for debt -->
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Müştəri (Borc üçün):" FontSize="12" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" Width="150" HorizontalAlignment="Right" Margin="0"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Ödənilən Nağd (₼):" FontSize="13" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding Paid, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Right" Margin="0" FontWeight="Bold" TextAlignment="Right"/>
+                                </Grid>
+
+                                <Separator Margin="0,6,0,8" Background="#CBD5E1"/>
+
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="YEKUN MƏBLƏĞ:" FontSize="15" FontWeight="Bold" Foreground="#0F172A"/>
+                                    <TextBlock Text="{Binding Total, StringFormat={}{0:N2} ₼}" FontSize="20" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Right"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,12">
+                                    <TextBlock Text="Qaytarılacaq Qalıq:" FontSize="13" FontWeight="SemiBold" Foreground="#10B981"/>
+                                    <TextBlock Text="{Binding Change, StringFormat={}{0:N2} ₼}" FontSize="15" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Right"/>
+                                </Grid>
+
+                                <Button Content="💳 SATIŞI TAMAMLA (F10)" Command="{Binding CompleteCommand}" Background="#10B981" Height="46" FontSize="15" FontWeight="Bold" Margin="0"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </DataTemplate>
+
+        <!-- 4. PURCHASES (ALIŞ) VIEW -->
+        <DataTemplate DataType="{x:Type vm:PurchaseVm}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+                    <TextBlock Text="Məhsul Alışı və Təchizat" FontSize="22" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,4"/>
+                    <TextBlock Text="Təchizatçılardan gələn malların qəbulu və alış qiymətlərinin yenilənməsi" FontSize="13" Foreground="#64748B" Margin="0,0,0,18"/>
+
+                    <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="24">
+                        <StackPanel>
+                            <TextBlock Text="Məhsul Seçin *" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                            <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,8,0">
+                                    <TextBlock Text="Alınan Miqdar *" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                    <TextBox Text="{Binding Quantity}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                    <TextBlock Text="Vahid Alış Qiyməti (₼) *" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                                    <TextBox Text="{Binding Price}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Təchizatçı Şirkət / Ad" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                            <TextBox Text="{Binding Supplier}"/>
+
+                            <TextBlock Text="Alış Qeydi" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                            <TextBox Text="{Binding Note}"/>
+
+                            <Button Content="📥 Alışı və Stoku Yadda Saxla" Command="{Binding SaveCommand}" Background="#2563EB" Height="42" FontSize="14" FontWeight="Bold" Margin="0,12,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+
+        <!-- 5. FINANCE (MALİYYƏ - GƏLİR/XƏRC) VIEW -->
+        <DataTemplate DataType="{x:Type vm:FinanceVm}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="380"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Expenses List -->
+                <Grid Grid.Column="0" Margin="0,0,16,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Margin="0,0,0,14">
+                        <TextBlock Text="Maliyyə və Xərclər" FontSize="22" FontWeight="Bold" Foreground="#0F172A"/>
+                        <TextBlock Text="Mağaza kommunal, icarə, maaş və digər xərclərin qeydiyyatı" FontSize="13" Foreground="#64748B"/>
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Expenses}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Tarix" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="140"/>
+                            <DataGridTextColumn Header="Kateqoriya" Binding="{Binding Category}" Width="130"/>
+                            <DataGridTextColumn Header="Təsvir / Səbəb" Binding="{Binding Description}" Width="*"/>
+                            <DataGridTextColumn Header="Məbləğ" Binding="{Binding Amount, StringFormat={}{0:N2} ₼}" Width="120"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- Right: Add Expense Card -->
+                <Border Grid.Column="1" Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="20" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="Yeni Xərc Qeydiyyatı" FontSize="16" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,14"/>
+
+                        <TextBlock Text="Xərc Kateqoriyası" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                        <TextBox Text="{Binding Form.Category}"/>
+
+                        <TextBlock Text="Təsvir (Kommunal, İcarə, Maaş və s.)" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                        <TextBox Text="{Binding Form.Description}"/>
+
+                        <TextBlock Text="Məbləğ (₼) *" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                        <TextBox Text="{Binding Form.Amount}"/>
+
+                        <Button Content="💸 Xərci Qeyd Et" Command="{Binding SaveCommand}" Background="#DC2626" Height="40" FontSize="13" FontWeight="Bold" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </DataTemplate>
+
+        <!-- 6. REPORTS (HESABATLAR) VIEW -->
+        <DataTemplate DataType="{x:Type vm:ReportsVm}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,10,0">
+                    <TextBlock Text="Hesabatlar və Analitika" FontSize="22" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,4"/>
+                    <TextBlock Text="Dövriyyə, xalis mənfəət, ən çox satılanlar və anbar statistikası" FontSize="13" Foreground="#64748B" Margin="0,0,0,16"/>
+
+                    <!-- Period Filter Bar -->
+                    <Border Background="White" CornerRadius="10" BorderBrush="#E2E8F0" BorderThickness="1" Padding="12" Margin="0,0,0,18">
+                        <WrapPanel VerticalAlignment="Center">
+                            <Button Content="Bugün" Command="{Binding PeriodCommand}" CommandParameter="Bugün" Style="{StaticResource QuickNavButtonStyle}" Margin="0,0,6,0"/>
+                            <Button Content="Dünən" Command="{Binding PeriodCommand}" CommandParameter="Dünən" Style="{StaticResource QuickNavButtonStyle}" Margin="0,0,6,0"/>
+                            <Button Content="Bu həftə" Command="{Binding PeriodCommand}" CommandParameter="Bu həftə" Style="{StaticResource QuickNavButtonStyle}" Margin="0,0,6,0"/>
+                            <Button Content="Bu ay" Command="{Binding PeriodCommand}" CommandParameter="Bu ay" Style="{StaticResource QuickNavButtonStyle}" Margin="0,0,6,0"/>
+                            <Button Content="Keçən ay" Command="{Binding PeriodCommand}" CommandParameter="Keçən ay" Style="{StaticResource QuickNavButtonStyle}" Margin="0,0,16,0"/>
+
+                            <TextBlock Text="Başlanğıc:" VerticalAlignment="Center" FontSize="12" Foreground="#475569" Margin="0,0,6,0"/>
+                            <DatePicker SelectedDate="{Binding From}" Margin="0,0,12,0"/>
+                            <TextBlock Text="Son:" VerticalAlignment="Center" FontSize="12" Foreground="#475569" Margin="0,0,6,0"/>
+                            <DatePicker SelectedDate="{Binding To}" Margin="0,0,12,0"/>
+                            <Button Content="🔄 Yenilə" Command="{Binding RefreshCommand}" Background="#2563EB"/>
+                        </WrapPanel>
+                    </Border>
+
+                    <!-- KPI Metric Cards Grid -->
+                    <UniformGrid Columns="3" Margin="0,0,0,20">
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="16" Margin="0,0,12,12">
+                            <StackPanel>
+                                <TextBlock Text="Ümumi Satış Həcmi" FontSize="12" Foreground="#64748B" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Sales, StringFormat={}{0:N2} ₼}" FontSize="22" FontWeight="Bold" Foreground="#2563EB" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="16" Margin="0,0,12,12">
+                            <StackPanel>
+                                <TextBlock Text="Satışın Maya Dəyəri" FontSize="12" Foreground="#64748B" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding CostOfGoods, StringFormat={}{0:N2} ₼}" FontSize="22" FontWeight="Bold" Foreground="#475569" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Brüt Mənfəət" FontSize="12" Foreground="#64748B" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Gross, StringFormat={}{0:N2} ₼}" FontSize="22" FontWeight="Bold" Foreground="#10B981" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="16" Margin="0,0,12,0">
+                            <StackPanel>
+                                <TextBlock Text="Digər Xərclər" FontSize="12" Foreground="#64748B" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Expenses, StringFormat={}{0:N2} ₼}" FontSize="22" FontWeight="Bold" Foreground="#EF4444" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="16" Margin="0,0,12,0">
+                            <StackPanel>
+                                <TextBlock Text="Xalis Mənfəət" FontSize="12" Foreground="#64748B" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Net, StringFormat={}{0:N2} ₼}" FontSize="22" FontWeight="Bold" Foreground="#059669" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Satış Sayı / Ədəd" FontSize="12" Foreground="#64748B" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding SaleCount, StringFormat={}{0} çek}" FontSize="22" FontWeight="Bold" Foreground="#7C3AED" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- Best Sellers & Most Profitable Grids -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <Grid.ColumnDefinition Width="*"/>
+                            <Grid.ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="18" Margin="0,0,10,0">
+                            <StackPanel>
+                                <TextBlock Text="🔥 Ən Çox Satılan Məhsullar" FontSize="15" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,12"/>
+                                <DataGrid ItemsSource="{Binding BestSellers}" MaxHeight="260">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Məhsul" Binding="{Binding Name}" Width="*"/>
+                                        <DataGridTextColumn Header="Miqdar" Binding="{Binding Quantity}" Width="80"/>
+                                        <DataGridTextColumn Header="Dövriyyə" Binding="{Binding Amount, StringFormat={}{0:N2} ₼}" Width="100"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="18" Margin="10,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="💎 Ən Çox Qazandıran Məhsullar" FontSize="15" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,12"/>
+                                <DataGrid ItemsSource="{Binding ProfitableProducts}" MaxHeight="260">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Məhsul" Binding="{Binding Name}" Width="*"/>
+                                        <DataGridTextColumn Header="Miqdar" Binding="{Binding Quantity}" Width="80"/>
+                                        <DataGridTextColumn Header="Mənfəət" Binding="{Binding Amount, StringFormat={}{0:N2} ₼}" Width="100"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+
+        <!-- 7. SETTINGS (AYARLAR) VIEW -->
+        <DataTemplate DataType="{x:Type vm:SettingsVm}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+                    <TextBlock Text="Sistem Ayarları və Backup" FontSize="22" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,4"/>
+                    <TextBlock Text="Mağaza parametrləri, nisyə/mənfi stok qaydaları və offline verilənlər bazası" FontSize="13" Foreground="#64748B" Margin="0,0,0,18"/>
+
+                    <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="24" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="Mağaza Adı" FontSize="12" FontWeight="SemiBold" Foreground="#475569"/>
+                            <TextBox Text="{Binding StoreName}"/>
+
+                            <CheckBox Content="Mənfi stoka icazə ver (Stokda olmayan malın satışına icazə)" IsChecked="{Binding AllowNegativeStock}" Margin="0,8,0,14" FontSize="13"/>
+
+                            <Button Content="💾 Ayarları Yadda Saxla" Command="{Binding SaveCommand}" Background="#2563EB" Height="40" FontSize="13" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="24">
+                        <StackPanel>
+                            <TextBlock Text="💾 SQLite Verilənlər Bazası və Ehtiyat Nüsxə" FontSize="16" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,10"/>
+                            <TextBlock Text="Baza Faylının Yolu:" FontSize="12" FontWeight="SemiBold" Foreground="#64748B"/>
+                            <TextBox Text="{Binding DatabasePath}" IsReadOnly="True" Background="#F8FAFC" Margin="0,4,0,12"/>
+
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="📦 Database Backup (Surət Çıxar)" Command="{Binding BackupCommand}" Background="#0284C7" Margin="0,0,10,0"/>
+                                <Button Content="⚠️ Backup Restore (Bərpa Et)" Command="{Binding RestoreCommand}" Background="#EF4444"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+    </Application.Resources>
+</Application>
+

@@ -1,7 +1,106 @@
-<Window x:Class="StoreManagement.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Calvotti Market" Height="780" Width="1280" WindowStartupLocation="CenterScreen" Background="#F8FAFC">
- <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-  <Border Background="#172554" Padding="16"><StackPanel><TextBlock Text="CALVOTTI" Foreground="White" FontSize="25" FontWeight="Bold" Margin="6,12,6,28"/>
-   <Button Content="🏠  Dashboard" Command="{Binding NavigateCommand}" CommandParameter="Dashboard"/><Button Content="📦  Mallar" Command="{Binding NavigateCommand}" CommandParameter="Mallar"/><Button Content="🛒  Satış" Command="{Binding NavigateCommand}" CommandParameter="Satış"/><Button Content="📥  Alış" Command="{Binding NavigateCommand}" CommandParameter="Alış"/><Button Content="💰  Gəlir / Xərc" Command="{Binding NavigateCommand}" CommandParameter="Maliyyə"/><Button Content="📊  Hesabatlar" Command="{Binding NavigateCommand}" CommandParameter="Hesabatlar"/><Button Content="⚙️  Ayarlar" Command="{Binding NavigateCommand}" CommandParameter="Ayarlar"/></StackPanel></Border>
-  <ContentControl Grid.Column="1" Content="{Binding CurrentPage}" Margin="18"/>
- </Grid>
+<Window x:Class="StoreManagement.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Calvotti Market - Mağaza və Anbar İdarəetmə Sistemi"
+        Height="850" Width="1380" MinHeight="700" MinWidth="1100"
+        WindowStartupLocation="CenterScreen"
+        Background="#F1F5F9"
+        FontFamily="Segoe UI, Inter, Arial">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Navigation Sidebar (Slate 900) -->
+        <Border Grid.Column="0" Background="#0F172A" BorderBrush="#1E293B" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Brand Header -->
+                <Border Grid.Row="0" Padding="20,24,20,20" BorderBrush="#1E293B" BorderThickness="0,0,0,1">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="42" Height="42" CornerRadius="10" Background="#2563EB" Margin="0,0,12,0">
+                            <TextBlock Text="🏪" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="CALVOTTI" Foreground="White" FontSize="18" FontWeight="Bold" LetterSpacing="0.5"/>
+                            <TextBlock Text="Market İdarəetmə" Foreground="#60A5FA" FontSize="11" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Navigation Menu Items -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,12,0,12">
+                    <StackPanel Margin="12,0">
+                        <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Dashboard" Content="📊  Dashboard"/>
+                        <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Satış" Content="🛒  Satış (POS)"/>
+                        <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Mallar" Content="📦  Mallar və Anbar"/>
+                        <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Alış" Content="📥  Alış (Təchizat)"/>
+                        <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Maliyyə" Content="💰  Gəlir / Xərc"/>
+                        <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Hesabatlar" Content="📈  Hesabatlar"/>
+                        <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Ayarlar" Content="⚙️  Ayarlar"/>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Footer / Status Badge -->
+                <Border Grid.Row="2" Padding="16" BorderBrush="#1E293B" BorderThickness="0,1,0,0" Background="#090E17">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="34" Height="34" CornerRadius="17" Background="#1E293B" Margin="0,0,10,0">
+                            <TextBlock Text="👤" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="Kassir: Admin" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                <Ellipse Width="7" Height="7" Fill="#10B981" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="SQLite Offline / Aktiv" Foreground="#94A3B8" FontSize="10"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Right Content Area -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="64"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Top Header Bar -->
+            <Border Grid.Row="0" Background="White" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="24,0">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="CALVOTTI POS &amp; ANBAR SİSTEMİ" FontSize="15" FontWeight="Bold" Foreground="#1E293B"/>
+                        <Border Background="#DBEAFE" CornerRadius="6" Padding="8,2" Margin="12,0,0,0">
+                            <TextBlock Text="v2.0 Pro" FontSize="11" FontWeight="Bold" Foreground="#1D4ED8"/>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Style="{StaticResource QuickNavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Satış" Content="⚡ Sürətli Satış (F2)" Margin="0,0,8,0"/>
+                        <Button Style="{StaticResource QuickNavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Mallar" Content="➕ Mal Əlavə Et"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Main Page View Container -->
+            <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" Margin="20"/>
+        </Grid>
+    </Grid>
 </Window>
+
