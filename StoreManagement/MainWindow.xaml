@@ -28,7 +28,7 @@
                             <TextBlock Text="🏪" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="CALVOTTI" Foreground="White" FontSize="18" FontWeight="Bold" LetterSpacing="0.5"/>
+                            <TextBlock Text="CALVOTTI" Foreground="White" FontSize="18" FontWeight="Bold"/>
                             <TextBlock Text="Market İdarəetmə" Foreground="#60A5FA" FontSize="11" FontWeight="SemiBold"/>
                         </StackPanel>
                     </StackPanel>
