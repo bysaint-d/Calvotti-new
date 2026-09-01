@@ -111,48 +111,130 @@ const STORAGE_KEYS = {
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-    return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+      if (!saved) return INITIAL_PRODUCTS;
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : INITIAL_PRODUCTS;
+    } catch {
+      return INITIAL_PRODUCTS;
+    }
   });
 
   const [sales, setSales] = useState<Sale[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SALES);
-    return saved ? JSON.parse(saved) : INITIAL_SALES;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SALES);
+      if (!saved) return INITIAL_SALES;
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : INITIAL_SALES;
+    } catch {
+      return INITIAL_SALES;
+    }
   });
 
   const [purchases, setPurchases] = useState<Purchase[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PURCHASES);
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PURCHASES);
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-    return saved ? JSON.parse(saved) : INITIAL_EXPENSES;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.EXPENSES);
+      if (!saved) return INITIAL_EXPENSES;
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : INITIAL_EXPENSES;
+    } catch {
+      return INITIAL_EXPENSES;
+    }
   });
 
   const [incomes, setIncomes] = useState<Income[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.INCOMES);
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.INCOMES);
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   });
 
   const [movements, setMovements] = useState<StockMovement[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.MOVEMENTS);
-    return saved ? JSON.parse(saved) : INITIAL_STOCK_MOVEMENTS;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.MOVEMENTS);
+      if (!saved) return INITIAL_STOCK_MOVEMENTS;
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : INITIAL_STOCK_MOVEMENTS;
+    } catch {
+      return INITIAL_STOCK_MOVEMENTS;
+    }
   });
 
   const [categories, setCategories] = useState<Category[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-    return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      if (!saved) return INITIAL_CATEGORIES;
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return INITIAL_CATEGORIES;
+      return parsed.map((item, idx) => {
+        if (typeof item === 'string') {
+          return { id: idx + 1, name: item };
+        }
+        if (item && typeof item === 'object') {
+          return { id: Number(item.id) || idx + 1, name: String(item.name || '') };
+        }
+        return { id: idx + 1, name: String(item || '') };
+      }).filter((c) => c.name.trim() !== '');
+    } catch {
+      return INITIAL_CATEGORIES;
+    }
   });
 
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SUPPLIERS);
-    return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SUPPLIERS);
+      if (!saved) return INITIAL_SUPPLIERS;
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return INITIAL_SUPPLIERS;
+      return parsed.map((item, idx) => {
+        if (typeof item === 'string') {
+          return { id: idx + 1, name: item };
+        }
+        if (item && typeof item === 'object') {
+          return {
+            id: Number(item.id) || idx + 1,
+            name: String(item.name || ''),
+            phone: item.phone ? String(item.phone) : undefined,
+            notes: item.notes ? String(item.notes) : undefined,
+          };
+        }
+        return { id: idx + 1, name: String(item || '') };
+      }).filter((s) => s.name.trim() !== '');
+    } catch {
+      return INITIAL_SUPPLIERS;
+    }
   });
 
   const [setting, setSetting] = useState<Setting>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SETTING);
-    return saved ? JSON.parse(saved) : INITIAL_SETTING;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SETTING);
+      if (!saved) return INITIAL_SETTING;
+      const parsed = JSON.parse(saved);
+      return {
+        id: parsed?.id || 1,
+        storeName: parsed?.storeName || INITIAL_SETTING.storeName,
+        currency: parsed?.currency || INITIAL_SETTING.currency,
+        allowNegativeStock: Boolean(parsed?.allowNegativeStock),
+      };
+    } catch {
+      return INITIAL_SETTING;
+    }
   });
 
   // Sync to localStorage

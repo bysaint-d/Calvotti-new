@@ -411,11 +411,11 @@ export const INITIAL_SALES: Sale[] = [
 ];
 
 export const INITIAL_EXPENSES: Expense[] = [
-  { id: 1, category: 'İcarə', description: 'Mağaza icarə haqqı (Aylıq)', amount: 650.00, date: formatDate(15), notes: 'Müqavilə üzrə ödənildi' },
-  { id: 2, category: 'Kommunal', description: 'Azərişıq elektrik ödənişi', amount: 84.50, date: formatDate(8), notes: 'Aprel ayı elektrik' },
-  { id: 3, category: 'Maaş', description: 'Kassir əmək haqqı avansı', amount: 300.00, date: formatDate(5), notes: 'Avans' },
-  { id: 4, category: 'Nəqliyyat', description: 'Məhsulların daşınması', amount: 25.00, date: formatDate(2), notes: 'Topdan bazardan gətirilmə' },
-  { id: 5, category: 'Digər', description: 'Təmizlik vasitələri və ləvazimatlar', amount: 18.00, date: formatDate(1), notes: 'Kassa lenti və torbalar' },
+  { id: 1, category: 'İcarə', description: 'Mağaza icarə haqqı (Aylıq)', amount: 650.00, date: '2026-08-18', paymentMethod: 'Nağd', notes: 'Müqavilə üzrə ödənildi' },
+  { id: 2, category: 'Kommunal', description: 'Azərişıq elektrik ödənişi', amount: 84.50, date: '2026-08-25', paymentMethod: 'Nağd', notes: 'Aprel ayı elektrik' },
+  { id: 3, category: 'Maaş', description: 'Kassir əmək haqqı avansı', amount: 300.00, date: '2026-08-28', paymentMethod: 'Nağd', notes: 'Avans' },
+  { id: 4, category: 'Nəqliyyat', description: 'Məhsulların daşınması', amount: 25.00, date: '2026-08-31', paymentMethod: 'Nağd', notes: 'Topdan bazardan gətirilmə' },
+  { id: 5, category: 'Digər', description: 'Təmizlik vasitələri və ləvazimatlar', amount: 18.00, date: '2026-09-01', paymentMethod: 'Nağd', notes: 'Kassa lenti və torbalar' },
 ];
 
 export const INITIAL_STOCK_MOVEMENTS: StockMovement[] = [
