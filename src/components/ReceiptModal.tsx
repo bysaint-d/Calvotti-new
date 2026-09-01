@@ -1,0 +1,158 @@
+import React from 'react';
+import { Printer, X, CheckCircle2 } from 'lucide-react';
+import { Sale } from '../types';
+import { useStore } from '../context/StoreContext';
+
+interface ReceiptModalProps {
+  sale: Sale | null;
+  onClose: () => void;
+}
+
+export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose }) => {
+  const { setting } = useStore();
+
+  if (!sale) return null;
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const formattedDate = new Date(sale.date).toLocaleString('az-AZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <h3 className="font-semibold text-base">Satış Çeki #{sale.id}</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Printable Receipt Paper */}
+        <div className="p-6 overflow-y-auto font-mono text-sm bg-slate-50 border-b border-slate-200">
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-xs space-y-4 text-slate-800" id="receipt-paper">
+            {/* Store Name & Header */}
+            <div className="text-center border-b border-dashed border-slate-300 pb-4">
+              <h2 className="font-bold text-lg text-slate-900 tracking-wider uppercase">
+                {setting.storeName || 'CALVOTTI MARKET'}
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">Müştəri Xidməti & Kassa</p>
+              <p className="text-xs text-slate-400 mt-1">Tarix: {formattedDate}</p>
+              <p className="text-xs text-slate-500">Çek No: #{sale.id}</p>
+              {sale.customerName && (
+                <p className="text-xs font-medium text-blue-600 mt-1">Müştəri: {sale.customerName}</p>
+              )}
+            </div>
+
+            {/* Line Items */}
+            <div className="space-y-2 text-xs border-b border-dashed border-slate-300 pb-4">
+              <div className="grid grid-cols-12 font-bold text-slate-500 pb-1 border-b border-slate-100">
+                <span className="col-span-6">Məhsul</span>
+                <span className="col-span-2 text-center">Say</span>
+                <span className="col-span-2 text-right">Qiymət</span>
+                <span className="col-span-2 text-right">Məbləğ</span>
+              </div>
+              {sale.items.map((item) => (
+                <div key={item.id} className="grid grid-cols-12 py-1 items-center">
+                  <div className="col-span-6 pr-1">
+                    <p className="font-medium text-slate-800 truncate">{item.productName}</p>
+                    {item.productBarcode && (
+                      <p className="text-[10px] text-slate-400 font-mono">{item.productBarcode}</p>
+                    )}
+                  </div>
+                  <span className="col-span-2 text-center text-slate-600">{item.quantity}</span>
+                  <span className="col-span-2 text-right text-slate-600">
+                    {item.salePrice.toFixed(2)}{setting.currency}
+                  </span>
+                  <span className="col-span-2 text-right font-semibold text-slate-900">
+                    {item.total.toFixed(2)}{setting.currency}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Financial Summary */}
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between text-slate-600">
+                <span>Ara cəmi:</span>
+                <span>{sale.subtotal.toFixed(2)} {setting.currency}</span>
+              </div>
+              {sale.discount > 0 && (
+                <div className="flex justify-between text-rose-600 font-medium">
+                  <span>Endirim:</span>
+                  <span>-{sale.discount.toFixed(2)} {setting.currency}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
+                <span>YEKUN:</span>
+                <span>{sale.total.toFixed(2)} {setting.currency}</span>
+              </div>
+              <div className="flex justify-between text-slate-600 pt-2">
+                <span>Ödəniş növü:</span>
+                <span className="font-semibold text-slate-800">{sale.paymentMethod}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Ödənilən məbləğ:</span>
+                <span>{sale.paidAmount.toFixed(2)} {setting.currency}</span>
+              </div>
+              {sale.changeAmount > 0 && (
+                <div className="flex justify-between text-emerald-700 font-semibold">
+                  <span>Qalıq pul:</span>
+                  <span>{sale.changeAmount.toFixed(2)} {setting.currency}</span>
+                </div>
+              )}
+              {sale.debtAmount > 0 && (
+                <div className="flex justify-between text-amber-600 font-semibold">
+                  <span>Borc qalan:</span>
+                  <span>{sale.debtAmount.toFixed(2)} {setting.currency}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Message & Barcode */}
+            <div className="text-center pt-4 border-t border-dashed border-slate-300">
+              <p className="text-xs font-semibold text-slate-700">Bizi seçdiyiniz üçün təşəkkür edirik!</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Yenidən gözləyirik.</p>
+              <div className="mt-3 flex justify-center">
+                <div className="font-mono text-[10px] tracking-widest bg-slate-100 px-3 py-1 rounded text-slate-600 border border-slate-200">
+                  * {sale.id.toString().padStart(8, '0')} *
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="p-4 bg-white flex items-center justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition"
+          >
+            Bağla
+          </button>
+          <button
+            onClick={handlePrint}
+            className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 flex items-center gap-2 transition"
+          >
+            <Printer className="w-4 h-4" />
+            Çap et
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

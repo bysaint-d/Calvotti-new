@@ -1,0 +1,6 @@
+{
+  "name": "Calvotti Market",
+  "description": "Calvotti Market üçün tam funksional mağaza, satış (POS), anbar və maliyyə idarəetmə sistemi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

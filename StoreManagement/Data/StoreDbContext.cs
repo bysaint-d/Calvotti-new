@@ -1,0 +1,7 @@
+using System.IO; using Microsoft.EntityFrameworkCore; using StoreManagement.Models;
+namespace StoreManagement.Data;
+public class StoreDbContext : DbContext
+{ public DbSet<Product> Products => Set<Product>(); public DbSet<Sale> Sales=>Set<Sale>(); public DbSet<SaleItem> SaleItems=>Set<SaleItem>(); public DbSet<Purchase> Purchases=>Set<Purchase>(); public DbSet<Expense> Expenses=>Set<Expense>(); public DbSet<Income> Incomes=>Set<Income>(); public DbSet<StockMovement> StockMovements=>Set<StockMovement>(); public DbSet<Setting> Settings=>Set<Setting>(); public DbSet<Category> Categories=>Set<Category>(); public DbSet<Supplier> Suppliers=>Set<Supplier>();
+ protected override void OnConfiguring(DbContextOptionsBuilder b) { DatabasePaths.Prepare(); b.UseSqlite($"Data Source={DatabasePaths.DatabaseFile}"); }
+ protected override void OnModelCreating(ModelBuilder b) { b.Entity<Product>().HasIndex(x=>x.Barcode).IsUnique(); b.Entity<Product>().Property(x=>x.Barcode).IsRequired(false); b.Entity<Product>().HasIndex(x=>x.Name); b.Entity<Purchase>().Ignore(x=>x.Total); b.Entity<SaleItem>().HasOne(x=>x.Product).WithMany(x=>x.SaleItems).HasForeignKey(x=>x.ProductId).OnDelete(DeleteBehavior.Restrict); foreach(var t in new[]{typeof(Product),typeof(Sale),typeof(SaleItem),typeof(Purchase),typeof(Expense),typeof(Income)}) foreach(var p in t.GetProperties().Where(x=>x.PropertyType==typeof(decimal) && x.CanWrite)) b.Entity(t).Property(p.Name).HasConversion<double>(); }
+}

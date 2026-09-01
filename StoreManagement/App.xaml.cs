@@ -1,0 +1,2 @@
+using System.Windows; using Microsoft.EntityFrameworkCore; using StoreManagement.Data; using StoreManagement.ViewModels;
+namespace StoreManagement; public partial class App : Application { protected override void OnStartup(StartupEventArgs e) { base.OnStartup(e); var db=new StoreDbContext(); db.Database.EnsureCreated(); DatabaseInitializer.Upgrade(); MainWindow=new MainWindow(new MainViewModel(db)); MainWindow.Show(); } }
