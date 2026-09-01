@@ -9,10 +9,10 @@ import {
   Settings,
   AlertTriangle,
   Store,
+  CreditCard,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-
-export type ActiveTab = 'Dashboard' | 'Mallar' | 'Satış' | 'Alış' | 'Maliyyə' | 'Hesabatlar' | 'Ayarlar';
+import { ActiveTab } from '../types';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -20,15 +20,22 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
-  const { setting, getStockReport } = useStore();
+  const { setting, getStockReport, sales } = useStore();
   const stockReport = getStockReport();
   const criticalCount = stockReport.lowStock + stockReport.outOfStock;
+  const activeDebtsCount = sales.filter((s) => s.debtAmount > 0).length;
 
   const navItems = [
     { id: 'Dashboard' as ActiveTab, label: 'Dashboard', icon: LayoutDashboard, badge: null },
     { id: 'Mallar' as ActiveTab, label: 'Mallar (Anbar)', icon: Package, badge: criticalCount > 0 ? `${criticalCount}` : null },
     { id: 'Satış' as ActiveTab, label: 'Satış (POS)', icon: ShoppingCart, badge: 'F2' },
     { id: 'Alış' as ActiveTab, label: 'Alış (Təchizat)', icon: PackagePlus, badge: null },
+    {
+      id: 'Borclar' as ActiveTab,
+      label: 'Borclar (Nisyə)',
+      icon: CreditCard,
+      badge: activeDebtsCount > 0 ? `${activeDebtsCount}` : null,
+    },
     { id: 'Maliyyə' as ActiveTab, label: 'Gəlir / Xərc', icon: Coins, badge: null },
     { id: 'Hesabatlar' as ActiveTab, label: 'Hesabatlar', icon: BarChart3, badge: null },
     { id: 'Ayarlar' as ActiveTab, label: 'Ayarlar', icon: Settings, badge: null },

@@ -49,8 +49,13 @@ interface StoreContextType {
     paidAmount: number;
     paymentMethod: 'Nağd' | 'Kart' | 'Borc';
     customerName?: string;
+    notes?: string;
   }) => Sale;
   returnSale: (saleId: number) => void;
+  deleteSale: (saleId: number, restoreStock?: boolean) => void;
+  clearAllSales: (restoreStock?: boolean) => void;
+  wipeAllProducts: () => void;
+  payDebt: (saleId: number, amount: number, notes?: string) => void;
   
   // Purchase Operations
   completePurchase: (params: {
@@ -280,12 +285,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     paidAmount,
     paymentMethod,
     customerName,
+    notes,
   }: {
     items: { productId: number; quantity: number }[];
     discount: number;
     paidAmount: number;
     paymentMethod: 'Nağd' | 'Kart' | 'Borc';
     customerName?: string;
+    notes?: string;
   }): Sale => {
     if (!items.length) throw new Error('Səbət boşdur.');
 
@@ -348,7 +355,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       changeAmount,
       debtAmount,
       paymentMethod,
-      customerName: customerName?.trim(),
+      customerName: customerName?.trim() || undefined,
+      notes: notes?.trim() || undefined,
       isReturned: false,
       items: saleItems,
     };
@@ -369,7 +377,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             previousStock: p.stockQuantity,
             newStock,
             date: nowIso,
-            notes: `Satış #${saleId}`,
+            notes: `Satış #${saleId}${customerName ? ` (${customerName})` : ''}`,
           });
           return { ...p, stockQuantity: newStock, updatedAt: nowIso };
         }
@@ -380,18 +388,56 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setMovements((prev) => [...newMovements, ...prev]);
     setSales((prev) => [newSale, ...prev]);
 
-    // Record Income
-    const income: Income = {
-      id: Date.now(),
-      category: 'Satış',
-      description: `Satış #${saleId} (${paymentMethod})`,
-      amount: total,
-      date: nowIso,
-      notes: customerName ? `Müştəri: ${customerName}` : undefined,
-    };
-    setIncomes((prev) => [income, ...prev]);
+    // Record Income if money received (either full total or partial payment on debt)
+    const incomeAmount = paymentMethod === 'Borc' ? paidAmount : total;
+    if (incomeAmount > 0) {
+      const income: Income = {
+        id: Date.now(),
+        category: 'Satış',
+        description: `Satış #${saleId} (${paymentMethod})`,
+        amount: incomeAmount,
+        date: nowIso,
+        notes: customerName ? `Müştəri: ${customerName}${notes ? ` - ${notes}` : ''}` : notes,
+      };
+      setIncomes((prev) => [income, ...prev]);
+    }
 
     return newSale;
+  };
+
+  const payDebt = (saleId: number, amount: number, notes?: string) => {
+    const sale = sales.find((s) => s.id === saleId);
+    if (!sale) throw new Error('Satış çeki tapılmadı.');
+    if (sale.isReturned) throw new Error('Qaytarılmış satış üçün borc ödənilə bilməz.');
+    if (sale.debtAmount <= 0) throw new Error('Bu satışın heç bir borc qalığı yoxdur.');
+    if (amount <= 0) throw new Error('Ödəniş məbləği 0-dan böyük olmalıdır.');
+    if (amount > sale.debtAmount) throw new Error(`Ödəniş məbləği qalıq borcdan (${sale.debtAmount} ₼) çox ola bilməz.`);
+
+    const nowIso = new Date().toISOString();
+    const newDebtAmount = Math.max(0, Number((sale.debtAmount - amount).toFixed(2)));
+    const newPaidAmount = Number((sale.paidAmount + amount).toFixed(2));
+
+    setSales((prev) =>
+      prev.map((s) =>
+        s.id === saleId
+          ? {
+              ...s,
+              debtAmount: newDebtAmount,
+              paidAmount: newPaidAmount,
+            }
+          : s
+      )
+    );
+
+    const income: Income = {
+      id: Date.now(),
+      category: 'Borc Ödənişi',
+      description: `Borc ödənişi (Çek #${saleId}) - ${sale.customerName || 'Müştəri'}`,
+      amount,
+      date: nowIso,
+      notes: notes || `Müştəri: ${sale.customerName || 'Məlum deyil'} (Ödənilən: ${amount.toFixed(2)} ₼, Qalıq: ${newDebtAmount.toFixed(2)} ₼)`,
+    };
+    setIncomes((prev) => [income, ...prev]);
   };
 
   const returnSale = (saleId: number) => {
@@ -436,6 +482,94 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       date: nowIso,
     };
     setIncomes((prev) => [refundIncome, ...prev]);
+  };
+
+  const deleteSale = (saleId: number, restoreStock: boolean = true) => {
+    const sale = sales.find((s) => s.id === saleId);
+    if (!sale) return;
+
+    if (restoreStock && !sale.isReturned) {
+      const nowIso = new Date().toISOString();
+      const newMovements: StockMovement[] = [];
+
+      setProducts((prev) =>
+        prev.map((p) => {
+          const item = sale.items.find((i) => i.productId === p.id);
+          if (item) {
+            const newStock = p.stockQuantity + item.quantity;
+            newMovements.push({
+              id: Date.now() + Math.random(),
+              productId: p.id,
+              productName: p.name,
+              type: 'Satış ləğvi',
+              quantity: item.quantity,
+              previousStock: p.stockQuantity,
+              newStock,
+              date: nowIso,
+              notes: `Satış #${saleId} silindi, stok bərpa edildi`,
+            });
+            return { ...p, stockQuantity: newStock, updatedAt: nowIso };
+          }
+          return p;
+        })
+      );
+
+      setMovements((prev) => [...newMovements, ...prev]);
+    }
+
+    setSales((prev) => prev.filter((s) => s.id !== saleId));
+    setIncomes((prev) => prev.filter((i) => !i.description.includes(`Satış #${saleId}`)));
+  };
+
+  const clearAllSales = (restoreStock: boolean = false) => {
+    if (restoreStock) {
+      const nowIso = new Date().toISOString();
+      const newMovements: StockMovement[] = [];
+
+      setProducts((prev) =>
+        prev.map((p) => {
+          let extraQty = 0;
+          for (const s of sales) {
+            if (!s.isReturned) {
+              const it = s.items.find((i) => i.productId === p.id);
+              if (it) extraQty += it.quantity;
+            }
+          }
+          if (extraQty > 0) {
+            const newStock = p.stockQuantity + extraQty;
+            newMovements.push({
+              id: Date.now() + Math.random(),
+              productId: p.id,
+              productName: p.name,
+              type: 'Satış ləğvi',
+              quantity: extraQty,
+              previousStock: p.stockQuantity,
+              newStock,
+              date: nowIso,
+              notes: `Bütün satışlar təmizləndi, stok bərpa edildi`,
+            });
+            return { ...p, stockQuantity: newStock, updatedAt: nowIso };
+          }
+          return p;
+        })
+      );
+      setMovements((prev) => [...newMovements, ...prev]);
+    }
+
+    setSales([]);
+    setIncomes((prev) => prev.filter((i) => i.category !== 'Satış' && i.category !== 'Qaytarma'));
+  };
+
+  const wipeAllProducts = () => {
+    localStorage.clear();
+    setProducts([]);
+    setSales([]);
+    setPurchases([]);
+    setExpenses([]);
+    setIncomes([]);
+    setMovements([]);
+    setCategories([]);
+    setSuppliers([]);
   };
 
   // Purchases
@@ -762,6 +896,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         adjustStock,
         completeSale,
         returnSale,
+        deleteSale,
+        clearAllSales,
+        wipeAllProducts,
+        payDebt,
         completePurchase,
         addExpense,
         deleteExpense,

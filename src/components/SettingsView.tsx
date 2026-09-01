@@ -29,6 +29,8 @@ export const SettingsView: React.FC = () => {
     exportDatabaseJson,
     importDatabaseJson,
     resetDatabase,
+    clearAllSales,
+    wipeAllProducts,
   } = useStore();
 
   const [storeName, setStoreName] = useState(setting.storeName);
@@ -131,6 +133,43 @@ export const SettingsView: React.FC = () => {
       setCurrency('₼');
       setAllowNegativeStock(false);
       setSuccess('Baza ilkin vəziyyətinə qaytarıldı!');
+      setTimeout(() => setSuccess(null), 3000);
+    }
+  };
+
+  const handleMasterWipeWithCode = () => {
+    // Step 1
+    const step1 = window.confirm(
+      '⚠️ 1/3 XƏBƏRDARLIQ: Bütün məhsullar, anbar qalıqları, kateqoriyalar və satış tarixçəsi tamamilə sıfırlanacaq!\n\nDavam etmək istəyirsiniz?'
+    );
+    if (!step1) return;
+
+    // Step 2
+    const step2 = window.confirm(
+      '🛑 2/3 TƏSDİQ: Bu əməliyyat GERİ QAYTARILA BİLMƏZ!\n\nBütün mağaza bazasını birdəfəlik silmək istədiyinizə tam əminsiniz?'
+    );
+    if (!step2) return;
+
+    // Step 3
+    const secretCode = window.prompt(
+      '🔒 3/3 TƏHLÜKƏSİZLİK KODU:\n\nSıfırlama əməliyyatını tamamlamaq üçün gizli kodu daxil edin:'
+    );
+
+    if (secretCode === null) return;
+
+    if (secretCode.trim() === 'kamal2014') {
+      wipeAllProducts();
+      setSuccess('🔥 Bütün məhsullar və baza uğurla sıfırlandı!');
+      setTimeout(() => setSuccess(null), 4000);
+    } else {
+      alert('❌ XƏTA: Daxil edilmiş gizli kod yanlışdır! Sıfırlama ləğv edildi.');
+    }
+  };
+
+  const handleClearSalesHistory = () => {
+    if (window.confirm('Bütün satış tarixçəsini təmizləmək istəyirsiniz? (Mallar anbara qaytarılmayacaq)')) {
+      clearAllSales(false);
+      setSuccess('Satış tarixçəsi təmizləndi.');
       setTimeout(() => setSuccess(null), 3000);
     }
   };
@@ -375,6 +414,34 @@ export const SettingsView: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Danger Zone: Master Products Reset & Sales Clean with Security Code */}
+      <div className="p-6 bg-rose-50/70 rounded-2xl border-2 border-rose-200 shadow-xs space-y-4">
+        <div className="flex items-center gap-2 text-rose-800 font-bold text-base">
+          <ShieldAlert className="w-5 h-5 text-rose-600" />
+          <span>Təhlükəli Əməliyyatlar və Baza Sıfırlama (Danger Zone)</span>
+        </div>
+        <p className="text-xs text-rose-700 leading-relaxed">
+          Bütün məhsulları və bazanı tam sıfırlamaq üçün 3 pilləli təsdiq tələb olunur və ən sonda <strong>kamal2014</strong> gizli kodu daxil edilməlidir. Yanlış kod daxil edildikdə heç bir məlumat silinməyəcək.
+        </p>
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <button
+            onClick={handleMasterWipeWithCode}
+            className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-md shadow-rose-600/20 transition"
+          >
+            <Trash2 className="w-4 h-4" />
+            🔥 Bütün Məhsulları və Bazanı Sıfırla (Kod: kamal2014)
+          </button>
+
+          <button
+            onClick={handleClearSalesHistory}
+            className="px-4 py-2.5 bg-white hover:bg-rose-100/50 text-rose-800 font-semibold border border-rose-300 rounded-xl text-xs flex items-center gap-2 transition"
+          >
+            <Trash2 className="w-4 h-4 text-rose-600" />
+            Yalnız Satış Tarixçəsini Təmizlə
+          </button>
         </div>
       </div>
     </div>

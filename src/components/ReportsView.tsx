@@ -13,6 +13,18 @@ import {
   ArrowDownRight,
   Flame,
   Award,
+  Search,
+  Printer,
+  Eye,
+  CreditCard,
+  Banknote,
+  UserCheck,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Filter,
 } from 'lucide-react';
 import {
   BarChart,
@@ -25,9 +37,12 @@ import {
   Legend,
 } from 'recharts';
 import { useStore } from '../context/StoreContext';
+import { Sale } from '../types';
+import { ReceiptModal } from './ReceiptModal';
 
 export const ReportsView: React.FC = () => {
   const {
+    sales,
     setting,
     getSummary,
     getPurchasesTotal,
@@ -45,6 +60,12 @@ export const ReportsView: React.FC = () => {
     new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]
   );
   const [customTo, setCustomTo] = useState<string>(today.toISOString().split('T')[0]);
+
+  // Receipts Section State
+  const [receiptSearch, setReceiptSearch] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'Nağd' | 'Kart' | 'Borc'>('all');
+  const [expandedSaleId, setExpandedSaleId] = useState<number | null>(null);
+  const [selectedReceiptSale, setSelectedReceiptSale] = useState<Sale | null>(null);
 
   // Calculate Date Boundaries
   const { fromDate, toDate } = useMemo(() => {
@@ -96,6 +117,48 @@ export const ReportsView: React.FC = () => {
   const mostProfitable = getMostProfitable(fromDate, toDate);
   const stockReport = getStockReport();
 
+  // Period sales list for individual receipts breakdown
+  const periodSales = useMemo(() => {
+    const fTime = fromDate.getTime();
+    const tTime = toDate.getTime();
+    return sales
+      .filter((s) => {
+        const sTime = new Date(s.date).getTime();
+        return sTime >= fTime && sTime <= tTime;
+      })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [sales, fromDate, toDate]);
+
+  // Filtered period sales based on search & payment filter
+  const filteredPeriodSales = useMemo(() => {
+    return periodSales.filter((s) => {
+      const q = receiptSearch.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        s.id.toString().includes(q) ||
+        (s.customerName && s.customerName.toLowerCase().includes(q)) ||
+        (s.notes && s.notes.toLowerCase().includes(q)) ||
+        s.items.some((i) => i.productName.toLowerCase().includes(q));
+
+      const matchesPayment = paymentFilter === 'all' || s.paymentMethod === paymentFilter;
+
+      return matchesSearch && matchesPayment;
+    });
+  }, [periodSales, receiptSearch, paymentFilter]);
+
+  // Totals by payment method in current period
+  const cashSalesTotal = periodSales
+    .filter((s) => s.paymentMethod === 'Nağd' && !s.isReturned)
+    .reduce((acc, s) => acc + s.total, 0);
+
+  const cardSalesTotal = periodSales
+    .filter((s) => s.paymentMethod === 'Kart' && !s.isReturned)
+    .reduce((acc, s) => acc + s.total, 0);
+
+  const debtSalesTotal = periodSales
+    .filter((s) => s.paymentMethod === 'Borc' && !s.isReturned)
+    .reduce((acc, s) => acc + s.total, 0);
+
   // Chart data preparation
   const chartData = [
     {
@@ -130,7 +193,7 @@ export const ReportsView: React.FC = () => {
             Maliyyə və Satış Hesabatları
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Mənfəət, xərclər, dövriyyə və ən çox satılan məhsulların statistikası
+            Mənfəət, xərclər, dövriyyə, ayrı-ayrı çəklər və ən çox satılan məhsulların statistikası
           </p>
         </div>
 
@@ -280,6 +343,252 @@ export const ReportsView: React.FC = () => {
         </div>
       </div>
 
+      {/* ========================================================================= */}
+      {/* DETAILED INDIVIDUAL SALES RECEIPTS BREAKDOWN (HƏR SATIŞ AYRI ÇEK KİMİ) */}
+      {/* ========================================================================= */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+          <div>
+            <div className="flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-blue-600" />
+              <h2 className="font-bold text-slate-900 text-base">
+                Dövrdə Edilən Çeklər və Satışlar (Hər Satış Ayrı)
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Seçilmiş dövrdəki bütün kassa çəklərinin ayrı-ayrı siyahısı, müştəri adları, satılan mallar və mənfəəti
+            </p>
+          </div>
+
+          {/* Quick Payment Totals */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold flex items-center gap-1">
+              <Banknote className="w-3.5 h-3.5 text-emerald-600" /> Nağd: {cashSalesTotal.toFixed(2)} {setting.currency}
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 font-semibold flex items-center gap-1">
+              <CreditCard className="w-3.5 h-3.5 text-blue-600" /> Kart: {cardSalesTotal.toFixed(2)} {setting.currency}
+            </span>
+            {debtSalesTotal > 0 && (
+              <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-semibold flex items-center gap-1">
+                ⚠️ Borc: {debtSalesTotal.toFixed(2)} {setting.currency}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Filter & Search Bar */}
+        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
+          <div className="relative flex-1 w-full sm:max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              value={receiptSearch}
+              onChange={(e) => setReceiptSearch(e.target.value)}
+              placeholder="Çek no, müştəri adı, qeyd və ya məhsula görə axtar..."
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <span className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+              <Filter className="w-3.5 h-3.5" /> Növ:
+            </span>
+            {(['all', 'Nağd', 'Kart', 'Borc'] as const).map((method) => (
+              <button
+                key={method}
+                onClick={() => setPaymentFilter(method)}
+                className={`px-3 py-1 text-xs rounded-lg font-semibold transition ${
+                  paymentFilter === method
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {method === 'all' ? 'Hamısı' : method}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Receipts Table / List */}
+        {filteredPeriodSales.length === 0 ? (
+          <div className="p-12 text-center text-slate-400 text-sm space-y-2">
+            <Receipt className="w-10 h-10 text-slate-300 mx-auto" />
+            <p className="font-semibold text-slate-600">Seçilmiş dövr və filter üçün kassa çeki tapılmadı.</p>
+            <p className="text-xs text-slate-400">Yuxarıdakı tarix filtrini dəyişərək digər tarixlərə baxa bilərsiniz.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {filteredPeriodSales.map((sale) => {
+              const isExpanded = expandedSaleId === sale.id;
+              const saleProfit = sale.items.reduce((acc, i) => acc + i.profit, 0);
+              const totalItemsCount = sale.items.reduce((acc, i) => acc + i.quantity, 0);
+
+              const formattedDate = new Date(sale.date).toLocaleString('az-AZ', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+
+              return (
+                <div
+                  key={sale.id}
+                  className={`transition ${sale.isReturned ? 'bg-rose-50/30' : isExpanded ? 'bg-blue-50/20' : 'hover:bg-slate-50/60'}`}
+                >
+                  {/* Receipt Header Row */}
+                  <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div className="flex items-start md:items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center text-slate-700 flex-shrink-0">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">ÇEK</span>
+                        <span className="text-xs font-extrabold text-slate-900">#{sale.id}</span>
+                      </div>
+
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-sm text-slate-900">
+                            Çek #{sale.id}
+                          </span>
+                          
+                          {/* Payment Method Badge */}
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                            sale.paymentMethod === 'Nağd'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : sale.paymentMethod === 'Kart'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-amber-100 text-amber-800 border border-amber-300'
+                          }`}>
+                            {sale.paymentMethod}
+                          </span>
+
+                          {sale.isReturned && (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                              Qaytarılıb
+                            </span>
+                          )}
+
+                          {sale.customerName && (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
+                              <UserCheck className="w-3 h-3" />
+                              {sale.customerName}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            {formattedDate}
+                          </span>
+                          <span>•</span>
+                          <span>{totalItemsCount} ədəd məhsul ({sale.items.length} çeşid)</span>
+                          {sale.notes && (
+                            <>
+                              <span>•</span>
+                              <span className="text-slate-700 font-medium bg-slate-100 px-2 py-0.5 rounded text-[11px]">
+                                Qeyd: {sale.notes}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Financial Summary & Actions */}
+                    <div className="flex items-center justify-between md:justify-end gap-4 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                      <div className="text-left md:text-right">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-base font-extrabold text-slate-900">
+                            {sale.total.toFixed(2)} {setting.currency}
+                          </span>
+                          {!sale.isReturned && (
+                            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                              +{saleProfit.toFixed(2)} {setting.currency} mənfəət
+                            </span>
+                          )}
+                        </div>
+                        {sale.debtAmount > 0 && (
+                          <p className="text-xs font-bold text-amber-600">
+                            Qalıq Borc: {sale.debtAmount.toFixed(2)} {setting.currency}
+                          </p>
+                        )}
+                        {sale.discount > 0 && (
+                          <p className="text-[11px] text-rose-500">
+                            Endirim: -{sale.discount.toFixed(2)} {setting.currency}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setSelectedReceiptSale(sale)}
+                          className="p-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 transition"
+                          title="Çekə bax və çap et"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => setExpandedSaleId(isExpanded ? null : sale.id)}
+                          className="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 transition"
+                        >
+                          <span>{isExpanded ? 'Gizlə' : 'Detallar'}</span>
+                          {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Items Breakdown */}
+                  {isExpanded && (
+                    <div className="px-6 pb-4 pt-1 bg-slate-50/80 border-t border-slate-200/60">
+                      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs mt-2">
+                        <div className="p-3 bg-slate-100/70 border-b border-slate-200 text-xs font-bold text-slate-700 grid grid-cols-12">
+                          <span className="col-span-5">Məhsul Adı</span>
+                          <span className="col-span-2 text-center">Say</span>
+                          <span className="col-span-2 text-right">Satış Qiyməti</span>
+                          <span className="col-span-1 text-right text-slate-500">Maya</span>
+                          <span className="col-span-2 text-right">Məbləğ / Mənfəət</span>
+                        </div>
+                        <div className="divide-y divide-slate-100 text-xs">
+                          {sale.items.map((item) => (
+                            <div key={item.id} className="p-3 grid grid-cols-12 items-center">
+                              <div className="col-span-5 pr-2">
+                                <p className="font-semibold text-slate-900">{item.productName}</p>
+                                {item.productBarcode && (
+                                  <p className="text-[10px] text-slate-400 font-mono">{item.productBarcode}</p>
+                                )}
+                              </div>
+                              <span className="col-span-2 text-center font-bold text-slate-800">
+                                {item.quantity} ədəd
+                              </span>
+                              <span className="col-span-2 text-right font-medium text-slate-700">
+                                {item.salePrice.toFixed(2)} {setting.currency}
+                              </span>
+                              <span className="col-span-1 text-right text-slate-400">
+                                {item.costPrice.toFixed(2)}
+                              </span>
+                              <div className="col-span-2 text-right">
+                                <span className="font-bold text-slate-900">
+                                  {item.total.toFixed(2)} {setting.currency}
+                                </span>
+                                <p className="text-[10px] font-bold text-emerald-600">
+                                  +{item.profit.toFixed(2)} {setting.currency}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Visual Bar Chart */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <h2 className="font-bold text-slate-900 text-base mb-4">Maliyyə Dövriyyəsi Qrafiki</h2>
@@ -373,6 +682,15 @@ export const ReportsView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Receipt Modal */}
+      {selectedReceiptSale && (
+        <ReceiptModal
+          sale={selectedReceiptSale}
+          onClose={() => setSelectedReceiptSale(null)}
+        />
+      )}
     </div>
   );
 };
+

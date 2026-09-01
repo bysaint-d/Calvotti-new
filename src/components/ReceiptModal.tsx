@@ -54,7 +54,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose }) => 
               <p className="text-xs text-slate-400 mt-1">Tarix: {formattedDate}</p>
               <p className="text-xs text-slate-500">Çek No: #{sale.id}</p>
               {sale.customerName && (
-                <p className="text-xs font-medium text-blue-600 mt-1">Müştəri: {sale.customerName}</p>
+                <p className="text-xs font-semibold text-blue-600 mt-1">Müştəri: {sale.customerName}</p>
+              )}
+              {sale.notes && (
+                <p className="text-[11px] font-medium text-slate-600 mt-0.5 bg-slate-50 py-1 px-2 rounded border border-slate-200">
+                  Qeyd: {sale.notes}
+                </p>
               )}
             </div>
 

@@ -8,6 +8,7 @@ import { PosSalesView } from './components/PosSalesView';
 import { PurchasesView } from './components/PurchasesView';
 import { FinanceView } from './components/FinanceView';
 import { ReportsView } from './components/ReportsView';
+import { BorclarView } from './components/BorclarView';
 import { SettingsView } from './components/SettingsView';
 import { ShoppingCart } from 'lucide-react';
 
@@ -91,6 +92,7 @@ const MainLayout: React.FC = () => {
             />
           )}
           {activeTab === 'Alış' && <PurchasesView />}
+          {activeTab === 'Borclar' && <BorclarView />}
           {activeTab === 'Maliyyə' && <FinanceView />}
           {activeTab === 'Hesabatlar' && <ReportsView />}
           {activeTab === 'Ayarlar' && <SettingsView />}

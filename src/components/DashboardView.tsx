@@ -11,9 +11,10 @@ import {
   Receipt,
   PlusCircle,
   Coins,
+  CreditCard,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { ActiveTab } from './Sidebar';
+import { ActiveTab } from '../types';
 
 interface DashboardViewProps {
   onNavigate: (tab: ActiveTab) => void;
@@ -275,6 +276,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpen
                 <Coins className="w-5 h-5 mb-2 text-amber-600 group-hover:scale-110 transition-transform" />
                 <p className="font-bold text-sm text-slate-900">Xərc Qeydi</p>
                 <p className="text-xs text-slate-500 mt-0.5">Gündəlik xərclər</p>
+              </button>
+
+              <button
+                onClick={() => onNavigate('Borclar')}
+                className="p-4 rounded-xl border border-rose-100 bg-rose-50/50 hover:bg-rose-50 text-rose-700 text-left transition group"
+              >
+                <CreditCard className="w-5 h-5 mb-2 text-rose-600 group-hover:scale-110 transition-transform" />
+                <p className="font-bold text-sm text-slate-900">Borc Dəftəri</p>
+                <p className="text-xs text-slate-500 mt-0.5">Nisyə & borc ödənişi</p>
               </button>
             </div>
           </div>

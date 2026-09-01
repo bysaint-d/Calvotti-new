@@ -38,6 +38,7 @@ export interface Sale {
   debtAmount: number;
   paymentMethod: 'Nağd' | 'Kart' | 'Borc';
   customerName?: string;
+  notes?: string;
   isReturned: boolean;
   items: SaleItem[];
 }
@@ -76,7 +77,7 @@ export interface StockMovement {
   id: number;
   productId: number;
   productName: string;
-  type: 'İlkin stok' | 'Stok düzəlişi' | 'Alış' | 'Satış' | 'Qaytarma';
+  type: 'İlkin stok' | 'Stok düzəlişi' | 'Alış' | 'Satış' | 'Qaytarma' | 'Satış ləğvi';
   quantity: number;
   previousStock: number;
   newStock: number;
@@ -130,5 +131,5 @@ export interface SummaryReport {
   count: number;
 }
 
-export type ActiveTab = 'Dashboard' | 'Mallar' | 'Satış' | 'Alış' | 'Maliyyə' | 'Hesabatlar' | 'Ayarlar';
+export type ActiveTab = 'Dashboard' | 'Mallar' | 'Satış' | 'Borclar' | 'Alış' | 'Maliyyə' | 'Hesabatlar' | 'Ayarlar';
 
