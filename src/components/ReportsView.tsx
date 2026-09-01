@@ -507,6 +507,11 @@ export const ReportsView: React.FC = () => {
                             </span>
                           )}
                         </div>
+                        {sale.paymentMethod === 'Borc' && sale.paidAmount > 0 && (
+                          <p className="text-[11px] font-semibold text-emerald-700">
+                            Ödənilən: {sale.paidAmount.toFixed(2)} {setting.currency} {sale.partialPaymentMethod && `(${sale.partialPaymentMethod})`}
+                          </p>
+                        )}
                         {sale.debtAmount > 0 && (
                           <p className="text-xs font-bold text-amber-600">
                             Qalıq Borc: {sale.debtAmount.toFixed(2)} {setting.currency}

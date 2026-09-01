@@ -51,6 +51,7 @@ export const PosSalesView: React.FC<PosSalesViewProps> = ({ onOpenNewProduct }) 
   const [discount, setDiscount] = useState<number>(0);
   const [paidAmount, setPaidAmount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<'Nağd' | 'Kart' | 'Borc'>('Nağd');
+  const [partialPaymentMethod, setPartialPaymentMethod] = useState<'Nağd' | 'Kart'>('Nağd');
   const [customerName, setCustomerName] = useState('');
   const [saleNotes, setSaleNotes] = useState('');
 
@@ -196,11 +197,15 @@ export const PosSalesView: React.FC<PosSalesViewProps> = ({ onOpenNewProduct }) 
     try {
       setPosError(null);
       if (cart.length === 0) throw new Error('Səbət boşdur.');
-      if (paymentMethod !== 'Borc' && paidAmount < total) {
-        throw new Error(`Ödənilən məbləğ (${paidAmount} ${setting.currency}) yekun məbləğdən (${total} ${setting.currency}) azdır!`);
+      
+      const numPaid = Number(paidAmount) || 0;
+
+      if (paymentMethod !== 'Borc' && numPaid < total) {
+        throw new Error(`Ödənilən məbləğ (${numPaid.toFixed(2)} ${setting.currency}) yekun məbləğdən (${total.toFixed(2)} ${setting.currency}) azdır! Qalan məbləği borca yazmaq üçün "Borc" növünü seçin və borc götürən şəxsin adını daxil edin.`);
       }
+
       if (paymentMethod === 'Borc' && !customerName.trim() && !saleNotes.trim()) {
-        throw new Error('Borc satışı üçün müştəri adını və ya qeydini mütləq daxil edin (məs: Elmir).');
+        throw new Error('Borc satışı üçün borc götürən müştərinin adını mütləq daxil edin (məsələn: Elmir).');
       }
 
       const effectiveCustomerName = customerName.trim() || (paymentMethod === 'Borc' ? saleNotes.trim() : '');
@@ -208,8 +213,9 @@ export const PosSalesView: React.FC<PosSalesViewProps> = ({ onOpenNewProduct }) 
       const sale = completeSale({
         items: cart.map((r) => ({ productId: r.product.id, quantity: r.quantity })),
         discount: Number(discount) || 0,
-        paidAmount: Number(paidAmount) || (paymentMethod === 'Borc' ? 0 : total),
+        paidAmount: paymentMethod === 'Borc' ? numPaid : (numPaid || total),
         paymentMethod,
+        partialPaymentMethod: paymentMethod === 'Borc' ? partialPaymentMethod : undefined,
         customerName: effectiveCustomerName,
         notes: saleNotes.trim() || undefined,
       });
@@ -217,6 +223,11 @@ export const PosSalesView: React.FC<PosSalesViewProps> = ({ onOpenNewProduct }) 
       setCompletedSale(sale);
       setIsReceiptOpen(true);
       clearCart();
+      setDiscount(0);
+      setPaidAmount(0);
+      setCustomerName('');
+      setSaleNotes('');
+      setPaymentMethod('Nağd');
       setPosSuccess(`Satış #${sale.id} uğurla tamamlandı!`);
       setTimeout(() => setPosSuccess(null), 4000);
     } catch (err: any) {
@@ -502,7 +513,7 @@ export const PosSalesView: React.FC<PosSalesViewProps> = ({ onOpenNewProduct }) 
 
             {/* Payment & Calculation Drawer */}
             <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
-              {/* Discount and Payment Method */}
+              {/* Discount and Payment Method Selection */}
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <label className="block font-semibold text-slate-600 mb-1">
@@ -529,6 +540,7 @@ export const PosSalesView: React.FC<PosSalesViewProps> = ({ onOpenNewProduct }) 
                         onClick={() => {
                           setPaymentMethod(method);
                           if (method === 'Kart') setPaidAmount(total);
+                          if (method === 'Nağd') setPaidAmount(total);
                           if (method === 'Borc') setPaidAmount(0);
                         }}
                         className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${
@@ -546,63 +558,210 @@ export const PosSalesView: React.FC<PosSalesViewProps> = ({ onOpenNewProduct }) 
                 </div>
               </div>
 
-              {/* Customer Name & Notes */}
-              <div className={`p-3 rounded-xl border space-y-2.5 transition ${
-                paymentMethod === 'Borc'
-                  ? 'bg-amber-50/70 border-amber-200 text-amber-900'
-                  : 'bg-slate-50/80 border-slate-200 text-slate-800'
-              }`}>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold flex items-center gap-1.5">
-                      <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Müştəri Adı {paymentMethod === 'Borc' && <span className="text-rose-600 font-bold">*</span>}</span>
+              {/* Borc (Nisyə / Hissəli Borc) Special Panel */}
+              {paymentMethod === 'Borc' ? (
+                <div className="p-3.5 rounded-xl border border-amber-300 bg-amber-50/80 text-amber-950 space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-amber-200 pb-2">
+                    <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                      <UserCheck className="w-4 h-4 text-amber-700" />
+                      Borc & Hissəli Ödəniş Məlumatları
+                    </span>
+                    <span className="text-[10px] font-semibold bg-amber-200/90 text-amber-900 px-2 py-0.5 rounded-md">
+                      Nisyə Dəftəri
+                    </span>
+                  </div>
+
+                  {/* 1. Borc Götürən Müştəri Adı */}
+                  <div>
+                    <label className="block text-xs font-bold text-amber-900 mb-1">
+                      Borc Götürən Şəxs (Müştəri Adı) <span className="text-rose-600 font-extrabold">*</span>
                     </label>
-                    {paymentMethod === 'Borc' && (
-                      <span className="text-[10px] font-semibold bg-amber-200/80 text-amber-900 px-1.5 py-0.5 rounded">
-                        Borc Dəftərinə yazılacaq
-                      </span>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Məsələn: Elmir"
+                      className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 shadow-xs"
+                    />
+                    {previousCustomerNames.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                        <span className="text-[10px] text-amber-800 font-medium">Tez seçim:</span>
+                        {previousCustomerNames.map((name) => (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => setCustomerName(name)}
+                            className="text-[10px] px-2 py-0.5 rounded bg-white hover:bg-amber-100 text-amber-900 border border-amber-200 font-semibold transition"
+                          >
+                            {name}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder={paymentMethod === 'Borc' ? 'Məsələn: Elmir' : 'Müştəri adı (istəyə bağlı)...'}
-                    className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500"
-                  />
-                  {previousCustomerNames.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                      <span className="text-[10px] text-slate-400">Tez seçim:</span>
-                      {previousCustomerNames.map((name) => (
-                        <button
-                          key={name}
-                          type="button"
-                          onClick={() => setCustomerName(name)}
-                          className="text-[10px] px-2 py-0.5 rounded bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 transition font-medium"
-                        >
-                          {name}
-                        </button>
-                      ))}
+
+                  {/* 2. İlkin Ödənilən Hissə və Ödəniş Üsulu */}
+                  <div className="bg-white/90 p-2.5 rounded-lg border border-amber-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-800">
+                        İndi Ödənilən Məbləğ ({setting.currency}):
+                      </label>
+                      <span className="text-[11px] text-slate-500">
+                        (Məs: 150 ₼-dan 100 ₼ ödəyir)
+                      </span>
                     </div>
-                  )}
-                </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                    Satış Qeydi (Məs: Ağ polo 85 manat Borc Elmir götürdü)
-                  </label>
-                  <input
-                    type="text"
-                    value={saleNotes}
-                    onChange={(e) => setSaleNotes(e.target.value)}
-                    placeholder="Qeyd və ya xüsusi məlumat..."
-                    className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max={total}
+                        value={paidAmount === 0 && !customerName ? '' : paidAmount}
+                        onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
+                        placeholder="0.00 (Tam borcdursa 0 saxlayın)"
+                        className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-extrabold text-slate-900 focus:ring-2 focus:ring-blue-500"
+                      />
 
-              {/* Quick Cash Selection Buttons */}
+                      {/* Quick Cash Buttons for Partial payment */}
+                      <div className="flex items-center gap-1 overflow-x-auto text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => setPaidAmount(0)}
+                          className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded"
+                        >
+                          0 ₼
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaidAmount(50)}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded"
+                        >
+                          50 ₼
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaidAmount(100)}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded"
+                        >
+                          100 ₼
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaidAmount(total)}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded"
+                        >
+                          Tam
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* If paidAmount > 0, choose Cash or Card for this partial payment */}
+                    {paidAmount > 0 && (
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-700">İlkin Ödəniş Üsulu:</span>
+                        <div className="flex gap-1">
+                          {(['Nağd', 'Kart'] as const).map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setPartialPaymentMethod(m)}
+                              className={`px-3 py-1 rounded text-xs font-bold transition ${
+                                partialPaymentMethod === m
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                              }`}
+                            >
+                              {m === 'Nağd' ? '💵 Nağd' : '💳 Kart'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. Real-Time Visual Calculation Summary */}
+                  <div className="bg-amber-100/90 p-3 rounded-lg border border-amber-300/80 space-y-1.5 text-xs text-amber-950">
+                    <div className="flex justify-between font-semibold text-slate-700">
+                      <span>Cəmi Səbət Məbləği:</span>
+                      <span>{total.toFixed(2)} {setting.currency}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-emerald-700">
+                      <span>İndi Ödənilən ({partialPaymentMethod}):</span>
+                      <span>{paidAmount.toFixed(2)} {setting.currency}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-extrabold text-rose-700 pt-1.5 border-t border-amber-300">
+                      <span>⚠️ Borca Qalan Məbləğ:</span>
+                      <span className="text-base">{debt.toFixed(2)} {setting.currency}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] font-bold text-amber-900 pt-0.5">
+                      <span>Borc Götürən:</span>
+                      <span>{customerName.trim() || 'Ad qeyd edilməyib'}</span>
+                    </div>
+                  </div>
+
+                  {/* 4. Satış Qeydi */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-amber-900 mb-1">
+                      Satış Qeydi (Məsələn: Ağ polo 85 manat Borc Elmir götürdü)
+                    </label>
+                    <input
+                      type="text"
+                      value={saleNotes}
+                      onChange={(e) => setSaleNotes(e.target.value)}
+                      placeholder="Qeyd və ya xüsusi məlumat..."
+                      className="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* Standard Cash / Card Panel */
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/80 space-y-2.5">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1">
+                      <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Müştəri Adı (İstəyə bağlı)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Məsələn: Elmir"
+                      className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500"
+                    />
+                    {previousCustomerNames.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                        <span className="text-[10px] text-slate-400">Tez seçim:</span>
+                        {previousCustomerNames.map((name) => (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => setCustomerName(name)}
+                            className="text-[10px] px-2 py-0.5 rounded bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 transition font-medium"
+                          >
+                            {name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Satış Qeydi
+                    </label>
+                    <input
+                      type="text"
+                      value={saleNotes}
+                      onChange={(e) => setSaleNotes(e.target.value)}
+                      placeholder="Qeyd və ya xüsusi məlumat..."
+                      className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Cash Selection Buttons for standard cash */}
               {paymentMethod === 'Nağd' && total > 0 && (
                 <div className="flex items-center gap-1.5 overflow-x-auto text-[11px]">
                   <button
@@ -623,60 +782,80 @@ export const PosSalesView: React.FC<PosSalesViewProps> = ({ onOpenNewProduct }) 
                 </div>
               )}
 
-              {/* Summary Numbers */}
-              <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
-                <div className="flex justify-between text-slate-500">
-                  <span>Cəmi Məbləğ:</span>
-                  <span className="font-semibold">{subtotal.toFixed(2)} {setting.currency}</span>
-                </div>
-                {discount > 0 && (
-                  <div className="flex justify-between text-rose-600 font-semibold">
-                    <span>Endirim:</span>
-                    <span>-{discount.toFixed(2)} {setting.currency}</span>
+              {/* Summary Numbers for Cash/Card */}
+              {paymentMethod !== 'Borc' && (
+                <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+                  <div className="flex justify-between text-slate-500">
+                    <span>Cəmi Məbləğ:</span>
+                    <span className="font-semibold">{subtotal.toFixed(2)} {setting.currency}</span>
                   </div>
-                )}
-                <div className="flex justify-between text-base font-extrabold text-slate-900 pt-1 border-t border-slate-100">
-                  <span>YEKUN ÖDƏNİŞ:</span>
-                  <span className="text-blue-600">{total.toFixed(2)} {setting.currency}</span>
-                </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-rose-600 font-semibold">
+                      <span>Endirim:</span>
+                      <span>-{discount.toFixed(2)} {setting.currency}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-base font-extrabold text-slate-900 pt-1 border-t border-slate-100">
+                    <span>YEKUN ÖDƏNİŞ:</span>
+                    <span className="text-blue-600">{total.toFixed(2)} {setting.currency}</span>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 items-center">
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600">Ödənilən:</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={paidAmount || ''}
-                      onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
-                      placeholder="0.00"
-                      className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-900"
-                    />
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 items-center">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600">Ödənilən:</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={paidAmount || ''}
+                        onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                        className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-900"
+                      />
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[11px] text-emerald-700 font-semibold">Qalıq Pul:</span>
+                      <p className="font-bold text-sm text-emerald-700">{change.toFixed(2)} {setting.currency}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    {paymentMethod === 'Borc' ? (
-                      <div>
-                        <span className="text-[11px] text-amber-600 font-semibold">Qalan Borc:</span>
-                        <p className="font-bold text-sm text-amber-600">{debt.toFixed(2)} {setting.currency}</p>
-                      </div>
-                    ) : (
-                      <div>
-                        <span className="text-[11px] text-emerald-700 font-semibold">Qalıq Pul:</span>
-                        <p className="font-bold text-sm text-emerald-700">{change.toFixed(2)} {setting.currency}</p>
-                      </div>
-                    )}
-                  </div>
+
+                  {/* Partial payment helper warning if paidAmount < total */}
+                  {paidAmount > 0 && paidAmount < total && (
+                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 space-y-1.5">
+                      <p className="text-[11px] font-semibold">
+                        💡 Ödənilən məbləğ ({paidAmount.toFixed(2)} {setting.currency}) azdır. Qalan <b>{(total - paidAmount).toFixed(2)} {setting.currency}</b> borca yazılsın?
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentMethod('Borc');
+                          setPartialPaymentMethod(paymentMethod as any);
+                        }}
+                        className="w-full py-1 bg-amber-600 hover:bg-amber-700 text-white rounded font-bold text-xs shadow-xs transition"
+                      >
+                        ⚠️ Qalan {(total - paidAmount).toFixed(2)} {setting.currency} Borca Yaz
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
 
               {/* Complete Checkout Button */}
               <button
                 onClick={handleCheckout}
                 disabled={cart.length === 0}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 text-base flex items-center justify-center gap-2 transition"
+                className={`w-full py-3 text-white font-bold rounded-xl shadow-lg text-base flex items-center justify-center gap-2 transition ${
+                  cart.length === 0
+                    ? 'bg-slate-300 cursor-not-allowed'
+                    : paymentMethod === 'Borc'
+                    ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
+                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                }`}
               >
                 <CheckCircle className="w-5 h-5" />
-                Satışı Tamamla ({total.toFixed(2)} {setting.currency})
+                {paymentMethod === 'Borc'
+                  ? `Satışı Tamamla (${debt.toFixed(2)} ${setting.currency} Borc, ${paidAmount.toFixed(2)} ${setting.currency} Ödənilən)`
+                  : `Satışı Tamamla (${total.toFixed(2)} ${setting.currency})`}
               </button>
             </div>
           </div>

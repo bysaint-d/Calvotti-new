@@ -108,11 +108,21 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose }) => 
               </div>
               <div className="flex justify-between text-slate-600 pt-2">
                 <span>Ödəniş növü:</span>
-                <span className="font-semibold text-slate-800">{sale.paymentMethod}</span>
+                <span className="font-semibold text-slate-800">
+                  {sale.paymentMethod === 'Borc' && sale.paidAmount > 0
+                    ? `Borc (İlkin ${sale.partialPaymentMethod || 'Nağd'})`
+                    : sale.paymentMethod}
+                </span>
               </div>
+              {sale.customerName && (
+                <div className="flex justify-between text-slate-600">
+                  <span>{sale.paymentMethod === 'Borc' || sale.debtAmount > 0 ? 'Borc Alan Müştəri:' : 'Müştəri:'}</span>
+                  <span className="font-bold text-slate-800">{sale.customerName}</span>
+                </div>
+              )}
               <div className="flex justify-between text-slate-600">
                 <span>Ödənilən məbləğ:</span>
-                <span>{sale.paidAmount.toFixed(2)} {setting.currency}</span>
+                <span className="font-bold text-emerald-700">{sale.paidAmount.toFixed(2)} {setting.currency}</span>
               </div>
               {sale.changeAmount > 0 && (
                 <div className="flex justify-between text-emerald-700 font-semibold">
@@ -121,8 +131,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose }) => 
                 </div>
               )}
               {sale.debtAmount > 0 && (
-                <div className="flex justify-between text-amber-600 font-semibold">
-                  <span>Borc qalan:</span>
+                <div className="flex justify-between text-amber-700 font-bold bg-amber-50 p-1.5 rounded border border-amber-200">
+                  <span>Qalıq Borc Məbləği:</span>
                   <span>{sale.debtAmount.toFixed(2)} {setting.currency}</span>
                 </div>
               )}

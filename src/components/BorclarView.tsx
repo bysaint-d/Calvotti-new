@@ -356,13 +356,23 @@ export const BorclarView: React.FC = () => {
 
                     {/* Financial Numbers & Actions */}
                     <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
-                      <div className="text-left md:text-right text-xs">
+                      <div className="text-left md:text-right text-xs space-y-0.5">
                         <div className="text-slate-500">
                           Yekun Məbləğ: <span className="font-bold text-slate-800">{sale.total.toFixed(2)} {setting.currency}</span>
                         </div>
                         <div className="text-slate-500">
                           Ödənilən: <span className="font-bold text-emerald-600">{sale.paidAmount.toFixed(2)} {setting.currency}</span>
+                          {sale.paidAmount > 0 && sale.partialPaymentMethod && (
+                            <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200">
+                              {sale.partialPaymentMethod}
+                            </span>
+                          )}
                         </div>
+                        {sale.debtAmount > 0 && (
+                          <div className="text-amber-800 font-extrabold text-[11px]">
+                            Qalıq Borc: <span>{sale.debtAmount.toFixed(2)} {setting.currency}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2">

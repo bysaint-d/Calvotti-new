@@ -37,6 +37,7 @@ export interface Sale {
   changeAmount: number;
   debtAmount: number;
   paymentMethod: 'Nağd' | 'Kart' | 'Borc';
+  partialPaymentMethod?: 'Nağd' | 'Kart';
   customerName?: string;
   notes?: string;
   isReturned: boolean;
@@ -61,6 +62,7 @@ export interface Expense {
   description: string;
   amount: number;
   date: string;
+  paymentMethod?: 'Nağd' | 'Kart';
   notes?: string;
 }
 
@@ -70,6 +72,7 @@ export interface Income {
   description: string;
   amount: number;
   date: string;
+  paymentMethod?: 'Nağd' | 'Kart';
   notes?: string;
 }
 

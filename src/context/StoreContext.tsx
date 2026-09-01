@@ -48,6 +48,7 @@ interface StoreContextType {
     discount: number;
     paidAmount: number;
     paymentMethod: 'Nağd' | 'Kart' | 'Borc';
+    partialPaymentMethod?: 'Nağd' | 'Kart';
     customerName?: string;
     notes?: string;
   }) => Sale;
@@ -55,7 +56,7 @@ interface StoreContextType {
   deleteSale: (saleId: number, restoreStock?: boolean) => void;
   clearAllSales: (restoreStock?: boolean) => void;
   wipeAllProducts: () => void;
-  payDebt: (saleId: number, amount: number, notes?: string) => void;
+  payDebt: (saleId: number, amount: number, paymentMethod?: 'Nağd' | 'Kart', notes?: string) => void;
   
   // Purchase Operations
   completePurchase: (params: {
@@ -70,6 +71,7 @@ interface StoreContextType {
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   deleteExpense: (id: number) => void;
   addIncome: (income: Omit<Income, 'id'>) => void;
+  deleteIncome: (id: number) => void;
   
   // Categories & Suppliers
   addCategory: (name: string) => void;
@@ -284,6 +286,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     discount,
     paidAmount,
     paymentMethod,
+    partialPaymentMethod,
     customerName,
     notes,
   }: {
@@ -291,6 +294,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     discount: number;
     paidAmount: number;
     paymentMethod: 'Nağd' | 'Kart' | 'Borc';
+    partialPaymentMethod?: 'Nağd' | 'Kart';
     customerName?: string;
     notes?: string;
   }): Sale => {
@@ -339,7 +343,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (paymentMethod === 'Borc' && !customerName?.trim()) {
-      throw new Error('Borc satışı üçün müştəri adı daxil edilməlidir.');
+      throw new Error('Borc satışı üçün müştəri adı (borc götürən) daxil edilməlidir.');
     }
 
     const changeAmount = paymentMethod === 'Borc' ? 0 : Math.max(0, Number((paidAmount - total).toFixed(2)));
@@ -355,6 +359,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       changeAmount,
       debtAmount,
       paymentMethod,
+      partialPaymentMethod: paymentMethod === 'Borc' ? (partialPaymentMethod || 'Nağd') : undefined,
       customerName: customerName?.trim() || undefined,
       notes: notes?.trim() || undefined,
       isReturned: false,
@@ -391,13 +396,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Record Income if money received (either full total or partial payment on debt)
     const incomeAmount = paymentMethod === 'Borc' ? paidAmount : total;
     if (incomeAmount > 0) {
+      const payMethodLabel = paymentMethod === 'Borc' 
+        ? `Borc Satışı - İlkin Ödəniş (${partialPaymentMethod || 'Nağd'})` 
+        : paymentMethod;
       const income: Income = {
         id: Date.now(),
         category: 'Satış',
-        description: `Satış #${saleId} (${paymentMethod})`,
+        description: `Satış #${saleId} (${payMethodLabel})`,
         amount: incomeAmount,
         date: nowIso,
-        notes: customerName ? `Müştəri: ${customerName}${notes ? ` - ${notes}` : ''}` : notes,
+        notes: customerName ? `Müştəri: ${customerName} (Borc Qalığı: ${debtAmount.toFixed(2)} ${setting.currency})${notes ? ` - ${notes}` : ''}` : notes,
       };
       setIncomes((prev) => [income, ...prev]);
     }
@@ -405,7 +413,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return newSale;
   };
 
-  const payDebt = (saleId: number, amount: number, notes?: string) => {
+  const payDebt = (saleId: number, amount: number, paymentMethod?: 'Nağd' | 'Kart', notes?: string) => {
     const sale = sales.find((s) => s.id === saleId);
     if (!sale) throw new Error('Satış çeki tapılmadı.');
     if (sale.isReturned) throw new Error('Qaytarılmış satış üçün borc ödənilə bilməz.');
@@ -429,13 +437,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       )
     );
 
+    const payType = paymentMethod || 'Nağd';
     const income: Income = {
       id: Date.now(),
       category: 'Borc Ödənişi',
-      description: `Borc ödənişi (Çek #${saleId}) - ${sale.customerName || 'Müştəri'}`,
+      description: `Borc ödənişi (Çek #${saleId}, ${payType}) - ${sale.customerName || 'Müştəri'}`,
       amount,
       date: nowIso,
-      notes: notes || `Müştəri: ${sale.customerName || 'Məlum deyil'} (Ödənilən: ${amount.toFixed(2)} ₼, Qalıq: ${newDebtAmount.toFixed(2)} ₼)`,
+      notes: notes || `Müştəri: ${sale.customerName || 'Məlum deyil'} (Ödənilən: ${amount.toFixed(2)} ₼, Qalıq Borc: ${newDebtAmount.toFixed(2)} ₼)`,
     };
     setIncomes((prev) => [income, ...prev]);
   };
@@ -660,6 +669,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     const id = incomes.length > 0 ? Math.max(...incomes.map((i) => i.id)) + 1 : 1;
     setIncomes((prev) => [{ ...inc, id }, ...prev]);
+  };
+
+  const deleteIncome = (id: number) => {
+    setIncomes((prev) => prev.filter((i) => i.id !== id));
   };
 
   // Categories & Suppliers
@@ -904,6 +917,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addExpense,
         deleteExpense,
         addIncome,
+        deleteIncome,
         addCategory,
         deleteCategory,
         addSupplier,
